@@ -13,7 +13,9 @@ import { CognitiveChangeRadar } from './CognitiveChangeRadar';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/ui/Button';
 import { generateCaregiverInsights } from '../../services/insights';
-
+import { generateAiSummary } from '../../services/api';
+import { getReminders } from '../../services/cultural/reminders';
+import { getLocalDateKey } from '../../utils/date';
 const CATEGORY_ICONS: Record<string, any> = {
   'Memory': Brain,
   'Attention': Target,
@@ -54,9 +56,9 @@ export function ElderOverview({ setActiveTab }: { setActiveTab?: (tab: string) =
         await computeBaselines(elderId);
         
         // Ensure today's reminders are fetched correctly
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateKey();
 
-        const dpDate = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(new Date().getDate()).padStart(2, '0');
+        const dpDate = getLocalDateKey();
         const [prof, rec, recentSess, cp, dp, activeReminders, memCount, relCount] = await Promise.all([
           getCognitiveProfile(elderId),
           recommendNextActivity(elderId),

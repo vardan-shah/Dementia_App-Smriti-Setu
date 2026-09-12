@@ -1,10 +1,11 @@
+import { getLocalDateKey } from "../../utils/date";
 import { db } from '../../db';
 import type { DailyPlan } from './types';
 import { recommendNextActivity } from '../personalization/recommendation';
 import { ALL_CULTURAL_CONTENT } from '../../config/culturalPacks';
 
 export async function getDailyPlan(elderId: string): Promise<DailyPlan> {
-  const todayDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+  const todayDate = getLocalDateKey();
   
   const existingPlan = await db.dailyPlans
     .where('[elderId+date]')

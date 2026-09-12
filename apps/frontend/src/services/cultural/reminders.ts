@@ -1,5 +1,6 @@
 import { db } from '../../db';
 import type { Reminder } from './types';
+import { getLocalDateKey } from '../../utils/date';
 import { syncManager } from '../../sync';
 
 export function validateReminder(reminder: Partial<Reminder>): string | null {
@@ -19,7 +20,7 @@ export function validateReminder(reminder: Partial<Reminder>): string | null {
 
 export async function getReminders(elderId: string): Promise<Reminder[]> {
   const allReminders = await db.reminders.where('elderId').equals(elderId).toArray();
-  const todayDate = new Date().toLocaleDateString('en-CA');
+  const todayDate = getLocalDateKey();
   const todayDayOfWeek = new Date().getDay(); // 0 (Sun) to 6 (Sat)
   
   const updatedReminders = await Promise.all(allReminders.map(async r => {
@@ -60,7 +61,7 @@ export async function getReminders(elderId: string): Promise<Reminder[]> {
 export async function toggleReminderCompletion(reminderId: string, completed: boolean) {
   const reminder = await db.reminders.get(reminderId);
   if (reminder) {
-    const todayDate = new Date().toLocaleDateString('en-CA');
+    const todayDate = getLocalDateKey();
     const updates = { 
       completedToday: completed,
       lastCompletedDate: completed ? todayDate : reminder.lastCompletedDate
