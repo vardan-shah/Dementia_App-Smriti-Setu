@@ -48,12 +48,13 @@ export function ObjectRecognition() {
       if (!elderId) return;
       try {
         const stored = await db.relatives.where('elderId').equals(elderId).toArray();
-        // Use photoLocal or photoUrl
         const withPhotos = stored.filter(r => r.photoLocal || r.photoUrl);
-        setRelatives(shuffle(withPhotos));
         
         const recDifficulty = await getRecommendedDifficulty(elderId, 'object-recognition');
+        
+        // Batch state updates so the option generator effect runs exactly once with the resolved difficulty
         setDifficulty(recDifficulty);
+        setRelatives(shuffle(withPhotos));
       } catch (err) {
         console.error(err);
       } finally {
@@ -84,7 +85,7 @@ export function ObjectRecognition() {
       setShowResult(false);
       setSelectedAnswer(null);
     }
-  }, [currentRelative, relatives]);
+  }, [currentRelative, relatives, difficulty]);
 
   const handleAnswer = (answer: string) => {
     if (showResult) return;

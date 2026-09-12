@@ -8,18 +8,26 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string, def: string) => def })
 }));
 
-vi.mock('../../../db', () => ({
-  db: {
-    relatives: {
-      toArray: vi.fn()
-    },
-    sessions: {
-      add: vi.fn()
-    },
-    syncEvents: {
-      add: vi.fn()
+vi.mock('../../../db', () => {
+  const toArrayMock = vi.fn();
+  const equalsMock = vi.fn().mockReturnValue({ toArray: toArrayMock });
+  const whereMock = vi.fn().mockReturnValue({ equals: equalsMock });
+  return {
+    db: {
+      relatives: { where: whereMock, toArray: toArrayMock },
+      sessions: { add: vi.fn() },
+      syncEvents: { add: vi.fn() }
     }
-  }
+  };
+});
+
+vi.mock('../../../services/adaptiveDifficulty', () => ({
+  getRecommendedDifficulty: vi.fn().mockResolvedValue('MEDIUM'),
+  getDifficultyConfig: vi.fn().mockReturnValue({ choices: 3 })
+}));
+
+vi.mock('../../../store/useAuthStore', () => ({
+  useAuthStore: vi.fn((selector) => selector({ elderId: 'test-elder-123' }))
 }));
 
 describe('ObjectRecognition Game', () => {

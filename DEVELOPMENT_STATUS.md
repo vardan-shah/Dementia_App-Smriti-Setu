@@ -38,7 +38,7 @@ Phase 2 — Memory-to-Game
 P0 VERIFIED COMPLETE
 
 ## Completed (P0)
-- **Object Recognition Game**: Dynamic generation of distractors based on family members.
+- **Object Recognition Game**: Dynamic generation of distractors based on family members. Difficulty selection correctly acts as a single source of truth for generating options asynchronously.
 - **Memory Vault & Stories**: Caregiver UI integrated and functionally localized.
 - **Offline Persistence**: Fully decoupled from network reliance utilizing Dexie local DB. 
 
