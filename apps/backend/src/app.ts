@@ -14,7 +14,10 @@ export async function buildApp() {
 
   await app.register(helmet);
   await app.register(cors, {
-    origin: true, // Allow all origins for local dev
+    origin: process.env.NODE_ENV === 'production' 
+      ? (process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : false)
+      : true, 
+    credentials: true
   });
 
   app.register(healthRoutes);
