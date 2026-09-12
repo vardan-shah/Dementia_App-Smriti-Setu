@@ -32,4 +32,21 @@ PHASE 1 — VERIFIED COMPLETE
 - Caregiver creates elder workflow: SUCCESS
 
 ## Next Phase
-Phase 2 — Memory Vault & Core Games
+Phase 2 — Memory-to-Game Foundation (P0 Complete)
+
+## Phase 2: Memory-to-Game Foundation
+**Status**: P0 (Object Recognition & Memory Vault) VERIFIED COMPLETE
+
+### Completed
+- **Memory Vault**: Caregiver UI to view and add Relatives.
+- **Image Handling**: Client-side canvas compression scaling local images (max 800px) before `Dexie` / `IndexedDB` caching.
+- **Database & API**: Migrated `memories` schema for Phase 2 Relatives. API `POST/GET /v1/relatives` built with Zod validation.
+- **Offline First**: Added `LocalRelative` schema. Create flows queue `RELATIVE_CREATED` sync events.
+- **Object Recognition Game (P0)**: Dynamically generates distractor options using the real, caregiver-authored relative pool. Supports offline. Calculates reaction time/accuracy markers and saves them as `GAME_SESSION_COMPLETED` sync payload.
+- **Architecture**: Separated `services/api.ts` from UI layers.
+
+### Remaining (Phase 2 P1/P2)
+- Recall Game (P1)
+- Language Exercises (P1)
+- Automatic content generation pipeline (P2)
+- Memory Stories creation UI integration (P0 API exists, UI pending)

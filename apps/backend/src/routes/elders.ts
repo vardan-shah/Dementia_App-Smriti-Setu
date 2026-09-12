@@ -2,10 +2,7 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'http://localhost:54321';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'dummy';
-// Service role client for privileged backend ops
-const supabaseService = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+import { authenticate, supabaseService } from '../utils/authUtils.js';
 
 const generatePairingCodeSchema = z.object({
   id: z.string().uuid(),
@@ -24,21 +21,6 @@ const createElderSchema = z.object({
 const getElderSchema = z.object({
   id: z.string().uuid(),
 });
-
-// Helper to authenticate request using Supabase
-async function authenticate(request: FastifyRequest) {
-  const authHeader = request.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    throw new Error('Missing or invalid Authorization header');
-  }
-  const token = authHeader.replace('Bearer ', '');
-  const { data: { user }, error } = await supabaseService.auth.getUser(token);
-  
-  if (error || !user) {
-    throw new Error('Unauthorized');
-  }
-  return user;
-}
 
 export async function elderRoutes(app: FastifyInstance) {
 

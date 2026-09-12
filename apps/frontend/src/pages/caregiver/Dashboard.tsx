@@ -58,9 +58,14 @@ export function Dashboard() {
                 <h3 className="text-lg font-bold">{elder.full_name}</h3>
                 <p className="text-sm text-gray-500">Language: {elder.primary_language}</p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => navigate(`/caregiver/elders/${elder.id}/pair`)}>
-                Pair Device
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => navigate(`/caregiver/elders/${elder.id}/vault`)}>
+                  Memory Vault
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate(`/caregiver/elders/${elder.id}/pair`)}>
+                  Pair Device
+                </Button>
+              </div>
             </Card>
           ))}
           

@@ -4,6 +4,8 @@ import helmet from '@fastify/helmet';
 import { healthRoutes } from './routes/health.js';
 import { syncRoutes } from './routes/sync.js';
 import { elderRoutes } from './routes/elders.js';
+import { relativeRoutes } from './routes/v1/relatives.js';
+import { storiesRoutes } from './routes/v1/stories.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -18,6 +20,10 @@ export async function buildApp() {
   app.register(healthRoutes);
   app.register(syncRoutes);
   app.register(elderRoutes);
+  
+  // Phase 2 Routes
+  app.register(relativeRoutes, { prefix: '/v1' });
+  app.register(storiesRoutes, { prefix: '/v1' });
 
   return app;
 }

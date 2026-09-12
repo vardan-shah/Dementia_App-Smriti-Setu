@@ -24,14 +24,30 @@ interface LocalSession {
   completedAt?: string;
 }
 
-interface LocalMemory {
+export interface LocalRelative {
   id: string;
-  title: string;
-  description?: string;
-  dateOfMemory?: string;
+  elderId: string;
+  name: string;
+  relationship: string;
+  photoUrl?: string; // Stored as base64 or blob URL locally if offline, or Supabase URL
+  voiceUrl?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface SyncEvent {
+export interface LocalMemory {
+  id: string;
+  elderId: string;
+  title: string;
+  description?: string;
+  relativeId?: string;
+  photoUrl?: string;
+  voiceUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SyncEvent {
   id: string;
   type: string;
   entity?: string;
@@ -48,15 +64,17 @@ export class SmritiSetuDB extends Dexie {
   games!: EntityTable<LocalGame, 'id'>;
   sessions!: EntityTable<LocalSession, 'id'>;
   memories!: EntityTable<LocalMemory, 'id'>;
+  relatives!: EntityTable<LocalRelative, 'id'>;
   syncEvents!: EntityTable<SyncEvent, 'id'>;
 
   constructor() {
     super('SmritiSetuDB');
-    this.version(2).stores({
+    this.version(3).stores({
       profiles: 'id, fullName',
       games: 'id, templateId',
       sessions: 'id, gameId, status',
-      memories: 'id, title',
+      memories: 'id, elderId, title',
+      relatives: 'id, elderId, name',
       syncEvents: 'id, type, status, createdAt',
     });
   }

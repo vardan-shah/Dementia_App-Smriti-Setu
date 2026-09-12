@@ -9,10 +9,13 @@ import { Register } from './pages/caregiver/Register';
 import { Dashboard } from './pages/caregiver/Dashboard';
 import { CreateElder } from './pages/caregiver/CreateElder';
 import { PairElder } from './pages/caregiver/PairElder';
+import { MemoryVault } from './pages/caregiver/MemoryVault';
+import { CreateRelative } from './pages/caregiver/CreateRelative';
 import { Pairing as ElderPairing } from './pages/elder/Pairing';
 import { Home as ElderHome } from './pages/elder/Home';
 import { Today as ElderToday } from './pages/elder/Today';
 import { Games as ElderGames } from './pages/elder/Games';
+import { ObjectRecognition } from './pages/elder/games/ObjectRecognition';
 import { Memories as ElderMemories } from './pages/elder/Memories';
 import { Help as ElderHelp } from './pages/elder/Help';
 
@@ -51,6 +54,8 @@ function App() {
             <Route path="create-elder" element={<CreateElder />} />
             <Route path="elders" element={<Dashboard />} />
             <Route path="elders/:id/pair" element={<PairElder />} />
+            <Route path="elders/:id/vault" element={<MemoryVault />} />
+            <Route path="elders/:id/vault/relative/new" element={<CreateRelative />} />
           </Route>
 
           {/* Protected Elder Routes */}
@@ -62,6 +67,7 @@ function App() {
             <Route index element={<ElderHome />} />
             <Route path="today" element={<ElderToday />} />
             <Route path="games" element={<ElderGames />} />
+            <Route path="games/object-recognition" element={<ObjectRecognition />} />
             <Route path="memories" element={<ElderMemories />} />
             <Route path="help" element={<ElderHelp />} />
           </Route>
