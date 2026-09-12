@@ -141,7 +141,7 @@ export function ObjectRecognition() {
       id: sessionId,
       gameId: 'object-recognition',
       elderId, // Scoped to elder
-      status: 'COMPLETED' as const,
+      status: completed ? ('COMPLETED' as const) : ('ABANDONED' as const),
       startedAt: new Date(sessionStartTimeRef.current).toISOString(),
       completedAt: new Date(completedAt).toISOString(),
       metrics: finalMetrics
