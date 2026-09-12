@@ -5,6 +5,7 @@ import { GAME_REGISTRY } from '../../config/games';
 
 const CONFIG = {
   RECENT_WINDOW_SESSIONS: 5,
+  MIN_RECENT_SESSIONS: 3,
   PERSISTENCE_THRESHOLD: 3, // 1=NONE, 2=WATCH, 3+=PERSISTENT
   MIN_SESSIONS_FOR_RADAR: 5,
   THRESHOLDS: {
@@ -62,7 +63,7 @@ async function evaluateCategory(elderId: string, category: CognitiveCategory): P
       id: `${elderId}_${category}`,
       elderId,
       category,
-      metric: category === 'Reaction' ? 'avgReactionTimeMs' : 'accuracy',
+      metric: category === 'Reaction' ? 'avgReactionTimeMs' : category === 'Engagement' ? 'completionRate' : 'accuracy',
       baselineValue: 0,
       currentValue: 0,
       delta: 0,
@@ -98,8 +99,23 @@ async function evaluateCategory(elderId: string, category: CognitiveCategory): P
 
   const recentRecords = relevantRecords.slice(0, CONFIG.RECENT_WINDOW_SESSIONS);
 
-  if (recentRecords.length === 0) {
-    return existingSignal || null;
+  if (recentRecords.length < CONFIG.MIN_RECENT_SESSIONS) {
+    return {
+      id: `${elderId}_${category}`,
+      elderId,
+      category,
+      metric: category === 'Reaction' ? 'avgReactionTimeMs' : category === 'Engagement' ? 'completionRate' : 'accuracy',
+      baselineValue: baseline.mean,
+      currentValue: 0,
+      delta: 0,
+      direction: 'UNKNOWN',
+      severity: 'NONE',
+      persistenceCount: 0,
+      sampleCount: recentRecords.length,
+      lastObservedAt: new Date().toISOString(),
+      status: 'INSUFFICIENT_DATA',
+      explanation: 'Building personal history...'
+    };
   }
 
   let metric: 'accuracy' | 'avgReactionTimeMs' | 'completionRate' = 'accuracy';
@@ -109,12 +125,15 @@ async function evaluateCategory(elderId: string, category: CognitiveCategory): P
 
   if (category === 'Engagement') {
     metric = 'completionRate';
-    const completed = recentRecords.filter(r => r.status === 'COMPLETED').length;
-    recentMean = completed / recentRecords.length;
-    // We check the overall recent mean against baseline for engagement
-    const delta = recentMean - baseline.mean;
-    isNegativeDeviation = () => delta <= -CONFIG.THRESHOLDS.engagementDrop;
-    isPositiveDeviation = () => delta >= CONFIG.THRESHOLDS.engagementDrop;
+    recentMean = recentRecords.reduce((sum, r) => sum + (r.status === 'COMPLETED' ? 1 : 0), 0) / recentRecords.length;
+    isNegativeDeviation = (r: any) => {
+      const val = r.status === 'COMPLETED' ? 1 : 0;
+      return (baseline.mean - val) >= CONFIG.THRESHOLDS.engagementDrop;
+    };
+    isPositiveDeviation = (r: any) => {
+      const val = r.status === 'COMPLETED' ? 1 : 0;
+      return (val - baseline.mean) >= CONFIG.THRESHOLDS.engagementDrop;
+    };
   } else if (category === 'Reaction') {
     metric = 'avgReactionTimeMs';
     recentMean = recentRecords.reduce((sum, r) => sum + r.avgReactionTimeMs, 0) / recentRecords.length;
@@ -129,13 +148,9 @@ async function evaluateCategory(elderId: string, category: CognitiveCategory): P
 
   // Count persistence of negative deviations in the recent window
   let negativeCount = 0;
-  if (category === 'Engagement') {
-    negativeCount = isNegativeDeviation(null) ? CONFIG.PERSISTENCE_THRESHOLD : 0;
-  } else {
-    recentRecords.forEach(r => {
-      if (isNegativeDeviation(r)) negativeCount++;
-    });
-  }
+  recentRecords.forEach(r => {
+    if (isNegativeDeviation(r)) negativeCount++;
+  });
 
   let direction: ChangeDirection = 'STABLE';
   let severity: ChangeSeverity = 'NONE';
@@ -157,13 +172,9 @@ async function evaluateCategory(elderId: string, category: CognitiveCategory): P
   } else {
     // Check if improving
     let positiveCount = 0;
-    if (category !== 'Engagement') {
-      recentRecords.forEach(r => {
-        if (isPositiveDeviation(r)) positiveCount++;
-      });
-    } else {
-      positiveCount = isPositiveDeviation(null) ? CONFIG.PERSISTENCE_THRESHOLD : 0;
-    }
+    recentRecords.forEach(r => {
+      if (isPositiveDeviation(r)) positiveCount++;
+    });
     
     if (positiveCount >= 2) {
       direction = 'IMPROVING';
