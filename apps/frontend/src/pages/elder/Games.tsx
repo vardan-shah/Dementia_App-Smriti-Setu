@@ -19,6 +19,28 @@ export function Games() {
           <h3 className="text-3xl font-bold text-center mb-2">Who is this?</h3>
           <p className="text-xl text-gray-600 text-center">Practice remembering family and friends.</p>
         </Card>
+
+        <Card 
+          className="p-8 cursor-pointer hover:bg-green-50 transition-colors border-2 hover:border-green-300"
+          onClick={() => navigate('/elder/games/recall')}
+        >
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 mx-auto">
+            <span className="text-4xl">🧠</span>
+          </div>
+          <h3 className="text-3xl font-bold text-center mb-2">Memory Recall</h3>
+          <p className="text-xl text-gray-600 text-center">Remember the items shown.</p>
+        </Card>
+
+        <Card 
+          className="p-8 cursor-pointer hover:bg-purple-50 transition-colors border-2 hover:border-purple-300"
+          onClick={() => navigate('/elder/games/language')}
+        >
+          <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-6 mx-auto">
+            <span className="text-4xl">📝</span>
+          </div>
+          <h3 className="text-3xl font-bold text-center mb-2">Match the Word</h3>
+          <p className="text-xl text-gray-600 text-center">Match words with pictures.</p>
+        </Card>
       </div>
     </div>
   );

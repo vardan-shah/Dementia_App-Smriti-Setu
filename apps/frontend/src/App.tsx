@@ -17,6 +17,8 @@ import { Home as ElderHome } from './pages/elder/Home';
 import { Today as ElderToday } from './pages/elder/Today';
 import { Games as ElderGames } from './pages/elder/Games';
 import { ObjectRecognition } from './pages/elder/games/ObjectRecognition';
+import { Recall } from './pages/elder/games/Recall';
+import { LanguageExercises } from './pages/elder/games/LanguageExercises';
 import { Memories as ElderMemories } from './pages/elder/Memories';
 import { Help as ElderHelp } from './pages/elder/Help';
 
@@ -70,6 +72,8 @@ function App() {
             <Route path="today" element={<ElderToday />} />
             <Route path="games" element={<ElderGames />} />
             <Route path="games/object-recognition" element={<ObjectRecognition />} />
+            <Route path="games/recall" element={<Recall />} />
+            <Route path="games/language" element={<LanguageExercises />} />
             <Route path="memories" element={<ElderMemories />} />
             <Route path="help" element={<ElderHelp />} />
           </Route>

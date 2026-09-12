@@ -28,5 +28,11 @@
   "sister": "ভনীয়েক",
   "grandson": "নাতি",
   "granddaughter": "নাতিনী",
-  "friend": "বন্ধু"
+  "friend": "বন্ধু",
+  "recall_game_title": "স্মৃতি ৰিকল",
+  "recall_instruction_study": "এই বস্তুবোৰ সাৱধানে চাওক:",
+  "im_ready": "মই সাজু",
+  "recall_instruction_pick": "আপুনি কি কি বস্তু দেখিছিল?",
+  "submit": "দাখিল কৰক",
+  "language_game_title": "শব্দ মিলাওক"
 }

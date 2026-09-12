@@ -28,5 +28,11 @@
   "sister": "বোন",
   "grandson": "নাতি",
   "granddaughter": "নাতনি",
-  "friend": "বন্ধু"
+  "friend": "বন্ধু",
+  "recall_game_title": "মেমরি রিকল",
+  "recall_instruction_study": "এই জিনিসগুলি মনোযোগ দিয়ে দেখুন:",
+  "im_ready": "আমি প্রস্তুত",
+  "recall_instruction_pick": "আপনি কোন জিনিসগুলো দেখেছিলেন?",
+  "submit": "জমা দিন",
+  "language_game_title": "শব্দ মেলান"
 }

@@ -28,5 +28,11 @@
   "sister": "sister",
   "grandson": "grandson",
   "granddaughter": "granddaughter",
-  "friend": "friend"
+  "friend": "friend",
+  "recall_game_title": "Memory Recall",
+  "recall_instruction_study": "Look carefully at these items:",
+  "im_ready": "I'm ready",
+  "recall_instruction_pick": "Which items did you see?",
+  "submit": "Submit",
+  "language_game_title": "Match the Word"
 }

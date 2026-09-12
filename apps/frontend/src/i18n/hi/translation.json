@@ -28,5 +28,11 @@
   "sister": "बहन",
   "grandson": "पोता",
   "granddaughter": "पोती",
-  "friend": "दोस्त"
+  "friend": "दोस्त",
+  "recall_game_title": "मेमोरी रिकॉल",
+  "recall_instruction_study": "इन वस्तुओं को ध्यान से देखें:",
+  "im_ready": "मैं तैयार हूँ",
+  "recall_instruction_pick": "आपने कौन सी वस्तुएँ देखीं?",
+  "submit": "जमा करें",
+  "language_game_title": "शब्द मिलाएँ"
 }

@@ -32,10 +32,24 @@ PHASE 1 — VERIFIED COMPLETE
 - Caregiver creates elder workflow: SUCCESS
 
 ## Current Phase
-Phase 2 — Memory-to-Game
+Phase 2 P1 — Recall + Language Exercises
 
-## Status
-P0 VERIFIED COMPLETE
+## Completed (P1)
+### Shared Game Foundation
+- Created `useGameSession` and `GameShell` to standardize telemetry, lifecycle, and UI layout.
+- Refactored `ObjectRecognition` without regressions.
+### Recall Game
+- Integrated Memory Vault content with safe fallback assets.
+- Integrated `adaptiveDifficulty` (EASY: 2 items, MEDIUM: 3 items, HARD: 4 items).
+- Telemetry correctly records `studyItems` and accuracy.
+### Language Exercises
+- Created 10-item localized dictionary (`en`, `hi`, `as`, `bn`).
+- Implemented 'Match the Word' game with adaptive choices.
+### Offline & Localization
+- Games cache content locally.
+- Full strings available across all four languages.
+### Tests
+- Expanded frontend `vitest` assertions to cover `Recall` and `LanguageExercises`.
 
 ## Completed (P0)
 - **Object Recognition Game**: Dynamic generation of distractors based on family members. Difficulty selection correctly acts as a single source of truth for generating options asynchronously.

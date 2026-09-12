@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { db } from '../../../db';
-import type { LocalRelative } from '../../../db';
 import { Button } from '../../../components/ui/Button';
 import { useAuthStore } from '../../../store/useAuthStore';
+import { useSettingsStore } from '../../../store/useSettingsStore';
 import { getDifficultyConfig } from '../../../services/adaptiveDifficulty';
 import { useGameSession } from '../../../hooks/useGameSession';
 import { GameShell } from '../../../components/elder/games/GameShell';
+import { VOCABULARY } from '../../../data/vocabulary';
+import type { LocalizedVocabulary } from '../../../data/vocabulary';
 
 function shuffle<T>(array: T[]): T[] {
   const arr = [...array];
@@ -18,55 +18,50 @@ function shuffle<T>(array: T[]): T[] {
   return arr;
 }
 
-export function ObjectRecognition() {
+export function LanguageExercises() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const elderId = useAuthStore(s => s.elderId);
-  
-  const { 
-    difficulty, 
-    loading: sessionLoading, 
-    recordQuestionStart, 
-    recordAnswer, 
-    finishGame, 
-    setDifficulty 
-  } = useGameSession('object-recognition', elderId);
-  
-  const [relatives, setRelatives] = useState<LocalRelative[]>([]);
-  const [loading, setLoading] = useState(true);
+  const settings = useSettingsStore();
+
+  // The vocabulary is currently typed as en, hi, as, bn.
+  // We need to resolve the correct language string.
+  const language = settings.language as 'en' | 'hi' | 'as' | 'bn';
+
+  const {
+    difficulty,
+    loading: sessionLoading,
+    recordQuestionStart,
+    recordAnswer,
+    finishGame
+  } = useGameSession('language-exercises', elderId);
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [options, setOptions] = useState<string[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [pool, setPool] = useState<LocalizedVocabulary[]>([]);
 
   useEffect(() => {
-    async function loadContent() {
-      if (!elderId) return;
-      try {
-        const stored = await db.relatives.where('elderId').equals(elderId).toArray();
-        const withPhotos = stored.filter(r => r.photoLocal || r.photoUrl);
-        setRelatives(shuffle(withPhotos));
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadContent();
-  }, [elderId]);
+    // Generate the game pool
+    setPool(shuffle([...VOCABULARY]));
+  }, []);
 
-  const currentRelative = relatives[currentIndex];
+  const currentItem = pool[currentIndex];
 
   useEffect(() => {
-    if (currentRelative && relatives.length > 0 && !sessionLoading) {
+    if (currentItem && !sessionLoading) {
       recordQuestionStart();
       
-      const config = getDifficultyConfig('object-recognition', difficulty);
-      const numOptions = Math.min(config.choices, relatives.length);
+      const config = getDifficultyConfig('language-exercises', difficulty);
+      const numOptions = Math.min(config.choices, pool.length);
 
-      const correctAnswer = currentRelative.name;
-      const pool = relatives.filter(r => r.id !== currentRelative.id).map(r => r.name);
-      const distractors = shuffle(pool).slice(0, numOptions - 1);
+      const correctAnswer = currentItem.translations[language] || currentItem.translations.en;
+      
+      // Select distractors
+      const distractorsPool = pool.filter(v => v.id !== currentItem.id);
+      const distractors = shuffle(distractorsPool)
+        .slice(0, numOptions - 1)
+        .map(v => v.translations[language] || v.translations.en);
       
       const combined = shuffle([correctAnswer, ...distractors]);
       setOptions(combined);
@@ -74,20 +69,22 @@ export function ObjectRecognition() {
       setShowResult(false);
       setSelectedAnswer(null);
     }
-  }, [currentRelative, relatives, difficulty, sessionLoading, recordQuestionStart]);
+  }, [currentItem, language, difficulty, sessionLoading, pool, recordQuestionStart]);
 
   const handleAnswer = (answer: string) => {
     if (showResult) return;
     
     setSelectedAnswer(answer);
     setShowResult(true);
-    const isCorrect = answer === currentRelative.name;
+    
+    const correctAnswer = currentItem.translations[language] || currentItem.translations.en;
+    const isCorrect = answer === correctAnswer;
     
     recordAnswer(isCorrect, options.length);
 
     if (isCorrect) {
       setTimeout(() => {
-        if (currentIndex < relatives.length - 1) {
+        if (currentIndex < pool.length - 1 && currentIndex < 9) { // cap at 10 rounds
           setCurrentIndex(currentIndex + 1);
         } else {
           finishGame(true);
@@ -101,10 +98,9 @@ export function ObjectRecognition() {
     }
   };
 
-  const isFullLoading = loading || sessionLoading;
-  const isEmpty = relatives.length === 0;
+  const isFullLoading = sessionLoading || pool.length === 0;
 
-  if (!isFullLoading && !isEmpty && !currentRelative) {
+  if (!isFullLoading && !currentItem) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
         <h2 className="text-4xl font-bold mb-6 text-green-600">{t('great_job', 'Great job!')}</h2>
@@ -115,28 +111,24 @@ export function ObjectRecognition() {
 
   return (
     <GameShell
-      title={t('who_is_this', 'Who is this?')}
+      title={t('language_game_title', 'Match the Word')}
       loading={isFullLoading}
-      emptyState={isEmpty}
-      emptyStateMessage={t('ask_family_add_first', 'Ask a family member to add someone first.')}
+      emptyState={false}
       onExit={() => finishGame(false)}
     >
-      {currentRelative && (
+      {currentItem && (
         <>
-          <div className="w-full aspect-square md:h-80 md:w-auto mb-8 rounded-2xl overflow-hidden shadow-lg border-4 border-white bg-gray-200 flex-shrink-0">
-            <img 
-              src={currentRelative.photoLocal || currentRelative.photoUrl} 
-              alt="Relative" 
-              className="w-full h-full object-cover"
-            />
+          <div className="w-full aspect-square md:h-80 md:w-auto mb-8 rounded-2xl overflow-hidden shadow-md border-4 border-white bg-gray-100 flex items-center justify-center text-8xl md:text-9xl flex-shrink-0">
+            <span>{currentItem.image}</span>
           </div>
 
           <div className="grid grid-cols-1 gap-4 w-full">
             {options.map((opt) => {
               let btnClass = "text-2xl py-6 rounded-2xl border-2 transition-all ";
+              const correctAnswer = currentItem.translations[language] || currentItem.translations.en;
               
               if (showResult) {
-                if (opt === currentRelative.name) {
+                if (opt === correctAnswer) {
                   btnClass += "bg-green-100 border-green-500 text-green-800 scale-[1.02]";
                 } else if (opt === selectedAnswer) {
                   btnClass += "bg-red-100 border-red-500 text-red-800";
