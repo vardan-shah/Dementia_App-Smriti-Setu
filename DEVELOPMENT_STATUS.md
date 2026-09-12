@@ -35,7 +35,7 @@ PHASE 1 — VERIFIED COMPLETE
 Phase 2 — Memory-to-Game
 
 ## Status
-P0 VERIFIED COMPLETE
+PHASE 2.0.1 — P0 HARDENING VERIFIED COMPLETE
 
 ## Next Phase
 Phase 2 P1 — Recall + Language Exercises
