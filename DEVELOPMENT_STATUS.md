@@ -35,7 +35,7 @@ PHASE 1 — VERIFIED COMPLETE
 Phase 2.0.1 — P0 Hardening & Defect Remediation Complete
 
 ## Phase 2: Memory-to-Game Foundation
-**Status**: PHASE 2 P0 — VERIFIED COMPLETE
+**Status**: PHASE 2.0.1 — P0 HARDENING VERIFIED COMPLETE
 
 ### Completed (P0 Hardened)
 - **Local-First Memory Vault**: Caregiver UI fully decoupled from network availability. Read/Write directly to IndexedDB first (`useLiveQuery`). Background fetch updates gracefully.
