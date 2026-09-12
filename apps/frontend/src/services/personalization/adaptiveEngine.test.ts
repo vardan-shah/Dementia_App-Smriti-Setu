@@ -57,31 +57,53 @@ describe('Adaptive Engine (Phase 6)', () => {
     const mockElder = 'elder1';
     const mockGame = 'game1';
 
-    it('defaults to MEDIUM with no history', async () => {
+    it('Test A: defaults to MEDIUM with no history (deterministic fallback)', async () => {
       const decision = await selectDifficulty(mockElder, mockGame, []);
       expect(decision.selectedDifficulty).toBe('MEDIUM');
-      expect(decision.isExploration).toBe(true);
+      expect(decision.isExploration).toBe(false);
       expect(decision.reason).toContain('No historical data');
     });
 
-    it('exploits best known arm when context has history', async () => {
+    it('Test B: Known arms + Math.random() below epsilon triggers exploration', async () => {
       await db.adaptiveArmStates.bulkAdd([
-        { id: '1', elderId: mockElder, gameId: mockGame, contextKey: 'STRONG_HIGH_MEDIUM', difficulty: 'EASY', meanReward: 0.1, selectionCount: 50, rewardVariance: 0, lastSelectedAt: '', updatedAt: '' },
-        { id: '2', elderId: mockElder, gameId: mockGame, contextKey: 'STRONG_HIGH_MEDIUM', difficulty: 'HARD', meanReward: 0.8, selectionCount: 50, rewardVariance: 0, lastSelectedAt: '', updatedAt: '' }
+        { id: '1', elderId: mockElder, gameId: mockGame, contextKey: 'STRONG_HIGH_MEDIUM', difficulty: 'EASY', meanReward: 0.1, selectionCount: 50, rewardVariance: 0, lastSelectedAt: '', updatedAt: '' }
       ]);
-      
       const records = [{ status: 'COMPLETED', accuracy: 1.0, difficulty: 'MEDIUM' }] as any[];
-      // The context will be STRONG_HIGH_MEDIUM. Epsilon will be min (0.05).
       
-      // Since it's random, we might hit exploration 5% of the time. But 95% of the time, we hit HARD.
-      // We can force Math.random to avoid flakes
+      // Force random to be below epsilon (epsilon min is 0.05)
+      vi.spyOn(Math, 'random').mockReturnValue(0.01); 
+      const decision = await selectDifficulty(mockElder, mockGame, records);
+      expect(decision.isExploration).toBe(true);
+      expect(decision.reason).toContain('Exploration step');
+      vi.restoreAllMocks();
+    });
+
+    it('Test C: Known arms but no contextual arm + epsilon not triggered -> bounded exploration', async () => {
+      await db.adaptiveArmStates.bulkAdd([
+        { id: '1', elderId: mockElder, gameId: mockGame, contextKey: 'DIFFERENT_CONTEXT', difficulty: 'EASY', meanReward: 0.1, selectionCount: 50, rewardVariance: 0, lastSelectedAt: '', updatedAt: '' }
+      ]);
+      const records = [{ status: 'COMPLETED', accuracy: 1.0, difficulty: 'MEDIUM' }] as any[]; // STRONG_HIGH_MEDIUM
+      
+      // Force random above epsilon
       vi.spyOn(Math, 'random').mockReturnValue(0.99); 
+      const decision = await selectDifficulty(mockElder, mockGame, records);
+      expect(decision.isExploration).toBe(true);
+      expect(decision.reason).toContain('Exploratory bounded selection');
+      vi.restoreAllMocks();
+    });
+
+    it('Test D: Known contextual arms + epsilon not triggered -> exploitation', async () => {
+      await db.adaptiveArmStates.bulkAdd([
+        { id: '1', elderId: mockElder, gameId: mockGame, contextKey: 'STRONG_HIGH_MEDIUM', difficulty: 'HARD', meanReward: 0.8, selectionCount: 50, rewardVariance: 0, lastSelectedAt: '', updatedAt: '' }
+      ]);
+      const records = [{ status: 'COMPLETED', accuracy: 1.0, difficulty: 'MEDIUM' }] as any[]; // STRONG_HIGH_MEDIUM
       
+      // Force random above epsilon
+      vi.spyOn(Math, 'random').mockReturnValue(0.99); 
       const decision = await selectDifficulty(mockElder, mockGame, records);
       expect(decision.selectedDifficulty).toBe('HARD');
       expect(decision.isExploration).toBe(false);
       expect(decision.reason).toContain('Exploiting highest contextual reward');
-      
       vi.restoreAllMocks();
     });
 

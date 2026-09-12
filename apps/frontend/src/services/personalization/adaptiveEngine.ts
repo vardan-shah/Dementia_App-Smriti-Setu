@@ -77,21 +77,23 @@ export async function selectDifficulty(elderId: string, gameId: string, recentRe
 
   // If no history at all or very sparse, fallback to deterministic or exploration
   if (arms.length === 0) {
-    return _recordDecision(elderId, gameId, contextKey, 'MEDIUM', true, 0, 'No historical data. Defaulting to MEDIUM.', sessionId);
+    return _recordDecision(elderId, gameId, contextKey, 'MEDIUM', false, 0, 'No historical data. Defaulting to MEDIUM.', sessionId);
   }
 
-  const isExploration = Math.random() < epsilon;
+  const epsilonExploration = Math.random() < epsilon;
+  const noContext = contextArms.length === 0;
+  const isExploration = epsilonExploration || noContext;
 
   let chosenDifficulty: DifficultyLevel = 'MEDIUM';
   let reason = '';
   let estimatedReward = 0;
 
-  if (isExploration || contextArms.length === 0) {
+  if (isExploration) {
     // Pick random difficulty bounded by 1 step from last difficulty
     chosenDifficulty = _getBoundedRandomDifficulty(lastDifficulty as DifficultyLevel);
-    reason = isExploration 
+    reason = epsilonExploration 
       ? `Exploration step (epsilon=${epsilon.toFixed(2)})` 
-      : `No contextual data for ${contextKey}. Exploring bounds.`;
+      : `No contextual data for ${contextKey}. Exploratory bounded selection.`;
     // Find expected reward from general arms if any
     const arm = arms.find(a => a.difficulty === chosenDifficulty);
     estimatedReward = arm ? arm.meanReward : 0;
