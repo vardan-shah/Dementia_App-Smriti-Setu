@@ -50,3 +50,6 @@ Provides an offline-first culturally tailored elder experience focusing natively
 The system adopts an explicit event-sourcing paradigm where mutations (`CULTURAL_PROFILE_UPDATED`, `REMINDER_CREATED`) enqueue locally into IndexedDB as `SyncEvents`. The backend routes these into an append-only ledger (`sync_events`), returning a deterministic semantic acknowledgment:
 1. `QUEUED`: Event preserved securely, but unsupported/awaiting batch ingestion.
 2. `SYNCED`: Event parsed, authorized, and materialized robustly into the canonical PostgreSQL domain schemas (`cultural_profiles`, `reminders`).
+
+## Database Migrations & Reconciliation (Phase 5.5)
+The repository uses purely append-only schema evolution. A historical migration `20260912000003_phase5_cultural_reminders.sql` mistakenly referenced legacy schemas. Instead of mutating published history, a robust `20260912000004_phase5_5_reconciliation.sql` was introduced. This strictly enforces foreign keys against `elder_profiles` and utilizes a hardened Security Definer RPC (`update_reminder_completion`) to strictly isolate elder capabilities to modifying reminder completions, bounding all structural reminder mutations to Caregivers matching `caregiver_elder_links`.

@@ -26,3 +26,6 @@
 
 ## Phase 5.3 Sync Authorization
 The generic `/sync` append-only ledger validates payload mutations before applying them to domain schemas (`cultural_profiles`, `reminders`). It completely ignores any generic `caregiver_id` appended in the payload. Instead, it extracts the target `elderId` and performs an independent `caregiver_elder_links` cross-check against the authenticated token's `user.id`. If authorization fails, the event is rejected cleanly with a `403 Forbidden`. Elders are strictly prevented from altering configuration parameters.
+
+## Database Level Authorization & RPCs (Phase 5.5)
+Elder permissions are further hardened at the PostgreSQL layer. Direct table `UPDATE` access to `public.reminders` has been fully revoked for Elders to prevent unauthorized alteration of title/time/recurrence settings via intercepted payloads. Instead, Elders only possess access to a `SECURITY DEFINER` Remote Procedure Call (`update_reminder_completion`) which executes an immutable `UPDATE` strictly bound to the `completed_today` and `last_completed_date` properties after validating `auth.uid() = elder_id`.
