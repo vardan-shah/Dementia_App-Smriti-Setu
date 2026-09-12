@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
+import { CognitiveBaseline } from '../services/personalization/types';
 
 interface LocalProfile {
   id: string;
@@ -66,6 +67,8 @@ export interface SyncEvent {
   errorMessage?: string;
 }
 
+
+
 export class SmritiSetuDB extends Dexie {
   profiles!: EntityTable<LocalProfile, 'id'>;
   games!: EntityTable<LocalGame, 'id'>;
@@ -73,6 +76,7 @@ export class SmritiSetuDB extends Dexie {
   memories!: EntityTable<LocalMemory, 'id'>;
   relatives!: EntityTable<LocalRelative, 'id'>;
   syncEvents!: EntityTable<SyncEvent, 'id'>;
+  cognitiveBaselines!: EntityTable<CognitiveBaseline, 'id'>;
 
   constructor() {
     super('SmritiSetuDB');
@@ -109,6 +113,11 @@ export class SmritiSetuDB extends Dexie {
     // v5 Schema: Add elderId to sessions indexing
     this.version(5).stores({
       sessions: 'id, [gameId+elderId], gameId, elderId, status', // Re-indexed to include elderId and compound key
+    });
+
+    // v6 Schema: Add cognitiveBaselines
+    this.version(6).stores({
+      cognitiveBaselines: 'id, [elderId+category], elderId',
     });
   }
 }

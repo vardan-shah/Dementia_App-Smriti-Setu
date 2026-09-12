@@ -1,78 +1,92 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../../supabase';
-import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
+import { MemoryVault } from './MemoryVault';
+import { PersonalizationInsights } from './PersonalizationInsights';
+import { CreateRelative } from './CreateRelative';
+import { Users, LogOut, Settings, Bell, BookOpen, Activity } from 'lucide-react';
+import { useAuthStore } from '../../store/useAuthStore';
+import { useTranslation } from 'react-i18next';
 
 export function Dashboard() {
-  const [elders, setElders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { clearAuth, currentCaregiverElder } = useAuthStore();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    clearAuth();
+    navigate('/login');
+  };
 
-  useEffect(() => {
-    async function fetchElders() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) return;
-      
-      try {
-        const response = await fetch(`${API_URL}/elders`, {
-          headers: {
-            'Authorization': `Bearer ${sessionData.session.access_token}`
-          }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setElders(data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch elders', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchElders();
-  }, [API_URL]);
+  const tabs = [
+    { id: 'insights', label: 'Insights', icon: Activity },
+    { id: 'relatives', label: 'Relatives', icon: Users },
+    { id: 'memories', label: 'Memory Vault', icon: BookOpen }
+  ];
 
-  if (loading) return <div>Loading dashboard...</div>;
+  const [activeTab, setActiveTab] = useState('insights');
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Caregiver Dashboard</h1>
-      
-      {elders.length === 0 ? (
-        <Card className="text-center py-12">
-          <h2 className="text-xl font-medium mb-2">No elders connected yet</h2>
-          <p className="text-gray-600 mb-6">Add your first elder to begin monitoring their progress.</p>
-          <Button onClick={() => navigate('/caregiver/create-elder')}>Add Elder</Button>
-        </Card>
+    <div className="max-w-7xl mx-auto space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {t('caregiver_dashboard_title', 'Caregiver Dashboard')}
+          </h1>
+          {currentCaregiverElder && (
+            <p className="text-gray-500 mt-1">Managing profile for {currentCaregiverElder.full_name}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" className="hidden md:flex">
+            <Bell className="w-4 h-4 mr-2" />
+            Notifications
+          </Button>
+          <Button variant="outline" className="hidden md:flex">
+            <Settings className="w-4 h-4 mr-2" />
+            Settings
+          </Button>
+          <Button variant="outline" onClick={handleLogout}>
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
+      </div>
+
+      {!currentCaregiverElder ? (
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-6 rounded-xl">
+          <h3 className="text-lg font-bold mb-2">No Elder Selected</h3>
+          <p>Please select or create an elder profile from the sidebar to manage their content.</p>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {elders.map(elder => (
-            <Card key={elder.id} className="flex items-center gap-4 cursor-pointer hover:border-secondary transition-colors">
-              <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-xl font-bold text-gray-500">
-                {elder.full_name.charAt(0)}
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold">{elder.full_name}</h3>
-                <p className="text-sm text-gray-500">Language: {elder.primary_language}</p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => navigate(`/caregiver/elders/${elder.id}/vault`)}>
-                  Memory Vault
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate(`/caregiver/elders/${elder.id}/pair`)}>
-                  Pair Device
-                </Button>
-              </div>
-            </Card>
-          ))}
-          
-          <Card className="flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors border-dashed min-h-[100px]" onClick={() => navigate('/caregiver/create-elder')}>
-            <span className="text-2xl mb-2">+</span>
-            <span className="font-medium">Add another elder</span>
-          </Card>
+        <div className="space-y-6">
+          <div className="flex space-x-1 bg-white p-1 rounded-lg shadow-sm border border-gray-100 w-full md:w-auto overflow-x-auto">
+            {tabs.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-1 md:flex-none flex items-center justify-center space-x-2 px-6 py-3 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-[500px]">
+            {activeTab === 'insights' && <PersonalizationInsights />}
+            {activeTab === 'relatives' && <CreateRelative />}
+            {activeTab === 'memories' && <MemoryVault />}
+          </div>
         </div>
       )}
     </div>

@@ -116,7 +116,16 @@ describe('Data Migration and Scoping', () => {
       elderId: 'elderB',
       status: 'COMPLETED',
       startedAt: new Date().toISOString(),
-      metrics: { correct: 10, errors: 0 }
+      metrics: { correct: 10, errors: 0, gameSpecificMetrics: { difficulty: 'MEDIUM' } }
+    } as any);
+
+    await realDb.sessions.add({
+      id: 's3',
+      gameId: 'object-recognition',
+      elderId: 'elderB',
+      status: 'COMPLETED',
+      startedAt: new Date().toISOString(),
+      metrics: { correct: 10, errors: 0, gameSpecificMetrics: { difficulty: 'MEDIUM' } }
     } as any);
 
     const difficultyA = await getRecommendedDifficulty('elderA', 'object-recognition');

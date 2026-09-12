@@ -21,23 +21,25 @@ const DIFFICULTY_CONFIG = {
 };
 
 export async function getRecommendedDifficulty(elderId: string, gameId: string): Promise<DifficultyLevel> {
-  // P0 prototype heuristic for difficulty selection
-  // This is NOT the final PRD contextual-bandit implementation.
   try {
     const recentSessions = await db.sessions
       .where('[gameId+elderId]')
       .equals([gameId, elderId])
       .reverse()
-      .limit(5)
+      .limit(3) // Look at the last 3 sessions for this game
       .toArray();
       
     // Default if no history
     if (recentSessions.length === 0) return 'MEDIUM';
     
-    // Evaluate recent metrics based on naive error rate heuristic
+    // Get the most recent difficulty played
+    const lastSession = recentSessions[0];
+    const lastMetrics: any = lastSession.metrics || {};
+    const currentDiff: DifficultyLevel = (lastMetrics.gameSpecificMetrics?.difficulty) || 'MEDIUM';
+    
+    // Evaluate recent metrics based on error rate heuristic, but bounded
     const recentMetrics = recentSessions.map((s: any) => s.metrics).filter(Boolean);
-    if (recentMetrics.length === 0) return 'MEDIUM';
-
+    
     let totalCorrect = 0;
     let totalErrors = 0;
     recentMetrics.forEach((m: any) => {
@@ -47,9 +49,23 @@ export async function getRecommendedDifficulty(elderId: string, gameId: string):
 
     const errorRate = totalErrors / Math.max(1, totalCorrect + totalErrors);
     
-    if (errorRate < 0.1) return 'HARD';
-    if (errorRate > 0.4) return 'EASY';
-    return 'MEDIUM';
+    // Bounded transitions
+    if (errorRate <= 0.1 && recentSessions.length >= 2) {
+      // Consistently doing well
+      if (currentDiff === 'EASY') return 'MEDIUM';
+      if (currentDiff === 'MEDIUM') return 'HARD';
+      return 'HARD';
+    } 
+    
+    if (errorRate >= 0.4) {
+      // Struggling
+      if (currentDiff === 'HARD') return 'MEDIUM';
+      if (currentDiff === 'MEDIUM') return 'EASY';
+      return 'EASY';
+    }
+    
+    // Otherwise keep current
+    return currentDiff;
   } catch (err) {
     console.error('Error fetching difficulty:', err);
     return 'MEDIUM';

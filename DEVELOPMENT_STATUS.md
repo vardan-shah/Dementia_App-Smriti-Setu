@@ -1,7 +1,19 @@
 # Smriti Setu Development Status
 
+## Current Phase
+Phase 3 — Personalization Engine + Cognitive Profile
+
 ## Status
-PHASE 2 P1.1 (Game Foundation Hardening) — VERIFIED COMPLETE
+VERIFIED COMPLETE
+
+## Active Tasks (Phase 3)
+- [x] Telemetry Normalization
+- [x] Elder-Specific Baseline
+- [x] Adaptive Difficulty
+- [x] Activity Recommendation Engine
+- [x] Cognitive Profile
+- [x] Offline Personalization
+- [x] Testing & Verification
 
 ## Completed (Phase 2 P1.1)
 - **GameShell Refactoring**: Refactored `GameShell` into a modular slot architecture supporting `instruction`, `audioControl`, `progress`, and `feedback` slots without forcing identical UI.
@@ -23,9 +35,11 @@ PHASE 2 P1.1 (Game Foundation Hardening) — VERIFIED COMPLETE
 - **Offline Persistence**: Fully decoupled from network reliance utilizing Dexie local DB. 
 
 ## Current Capability Profile
-- **Difficulty Algorithm**: Prototype Heuristic based on naive error rate thresholds (EASY, MEDIUM, HARD). *Not yet utilizing contextual-bandit or Q-learning*.
+- **Personalization Engine**: Computes elder-specific baselines locally using Dexie. Generates bounded adaptive difficulty and recency/performance-based activity recommendations.
+- **Cognitive Profile**: Caregiver-facing non-clinical activity profile (Memory, Language, Reaction, Engagement).
+- **Difficulty Algorithm**: Bounded difficulty transitions derived from error rate heuristics (EASY, MEDIUM, HARD). *Contextual-bandit ML deferred to future phases*.
 - **Game Scoping**: Difficulty and session telemetry strictly isolated to the active `elderId`.
 - **Media**: Local blobs cached via IndexedDB (future phase will link to Supabase Storage).
 
 ## Next
-Ready for further directives (DO NOT START Phase 2 P2).
+Ready for further directives.
