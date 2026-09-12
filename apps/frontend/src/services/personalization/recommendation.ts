@@ -1,8 +1,10 @@
+import { getRecommendedDifficulty } from "../adaptiveDifficulty";
 import { db } from '../../db';
 import { AVAILABLE_GAMES, GAME_REGISTRY } from '../../config/games';
 
 export interface ActivityRecommendation {
   gameId: string;
+  difficulty: string;
   reason: string;
   score: number;
 }
@@ -28,6 +30,7 @@ export async function recommendNextActivity(elderId: string): Promise<ActivityRe
   if (records.length === 0) {
     return {
       gameId: 'object-recognition',
+      difficulty: 'MEDIUM',
       reason: 'A great starting point to build your personal learning history.',
       score: 1.0
     };
@@ -116,8 +119,11 @@ export async function recommendNextActivity(elderId: string): Promise<ActivityRe
     reason = `${top.name} was selected to balance diversity in your daily memory activity plan.`;
   }
 
+  const { difficulty } = await getRecommendedDifficulty(elderId, top.gameId);
+
   return {
     gameId: top.gameId,
+    difficulty,
     reason,
     score: top.totalScore
   };

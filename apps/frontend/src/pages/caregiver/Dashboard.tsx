@@ -24,11 +24,11 @@ export function Dashboard() {
   };
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: Activity },
-    { id: 'relatives', label: 'Relatives', icon: Users },
-    { id: 'memories', label: 'Memory Vault', icon: BookOpen },
-    { id: 'reminders', label: 'Reminders', icon: Clock },
-    { id: 'settings', label: 'Settings', icon: Settings }
+    { id: 'overview', label: t('overview', 'Overview'), icon: Activity },
+    { id: 'relatives', label: t('relatives', 'Relatives'), icon: Users },
+    { id: 'memories', label: t('memory_vault', 'Memory Vault'), icon: BookOpen },
+    { id: 'reminders', label: t('reminders', 'Reminders'), icon: Clock },
+    { id: 'settings', label: t('settings', 'Settings'), icon: Settings }
   ];
 
   const [activeTab, setActiveTab] = useState('overview');
@@ -41,29 +41,29 @@ export function Dashboard() {
             {t('caregiver_dashboard_title', 'Caregiver Dashboard')}
           </h1>
           {currentCaregiverElder && (
-            <p className="text-gray-500 mt-1">Managing profile for {currentCaregiverElder.full_name}</p>
+            <p className="text-gray-500 mt-1">{t('managing_profile_for', 'Managing profile for')} {currentCaregiverElder.full_name}</p>
           )}
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" className="hidden md:flex">
             <Bell className="w-4 h-4 mr-2" />
-            Notifications
+            {t('notifications', 'Notifications')}
           </Button>
           <Button variant="outline" className="hidden md:flex">
             <Settings className="w-4 h-4 mr-2" />
-            Settings
+            {t('settings', 'Settings')}
           </Button>
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
+            {t('sign_out', 'Sign Out')}
           </Button>
         </div>
       </div>
 
       {!currentCaregiverElder ? (
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-6 rounded-xl">
-          <h3 className="text-lg font-bold mb-2">No Elder Selected</h3>
-          <p>Please select or create an elder profile from the sidebar to manage their content.</p>
+          <h3 className="text-lg font-bold mb-2">{t('no_elder_selected', 'No Elder Selected')}</h3>
+          <p>{t('please_select_elder_sidebar', 'Please select or create an elder profile from the sidebar to manage their content.')}</p>
         </div>
       ) : (
         <div className="space-y-6">

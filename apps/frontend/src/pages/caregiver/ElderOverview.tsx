@@ -56,13 +56,14 @@ export function ElderOverview({ setActiveTab }: { setActiveTab?: (tab: string) =
         // Ensure today's reminders are fetched correctly
         const today = new Date().toISOString().split('T')[0];
 
-        const [prof, rec, recentSess, cp, dp, allReminders, memCount, relCount] = await Promise.all([
+        const dpDate = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(new Date().getDate()).padStart(2, '0');
+        const [prof, rec, recentSess, cp, dp, activeReminders, memCount, relCount] = await Promise.all([
           getCognitiveProfile(elderId),
           recommendNextActivity(elderId),
           db.performanceRecords.where('elderId').equals(elderId).reverse().limit(10).toArray(),
           db.culturalProfiles.where('elderId').equals(elderId).first(),
-          db.dailyPlans.where('elderId').equals(elderId).first(),
-          db.reminders.where('elderId').equals(elderId).toArray(),
+          db.dailyPlans.where('[elderId+date]').equals([elderId, dpDate]).first(),
+          getReminders(elderId),
           db.memories.where('elderId').equals(elderId).count(),
           db.relatives.where('elderId').equals(elderId).count()
         ]);
@@ -72,14 +73,6 @@ export function ElderOverview({ setActiveTab }: { setActiveTab?: (tab: string) =
         setRecentSessions(recentSess || []);
         setCulturalProfile(cp || null);
         setDailyPlan(dp || null);
-        
-        // Filter to today's enabled reminders
-        const todayDayOfWeek = new Date().getDay();
-        const activeReminders = allReminders.filter(r => {
-          if (!r.enabled) return false;
-          if (r.recurrence === 'DAILY') return true;
-          return false;
-        }).sort((a, b) => a.time.localeCompare(b.time));
         setReminders(activeReminders);
         
         setMemoryCount(memCount);
@@ -99,24 +92,11 @@ export function ElderOverview({ setActiveTab }: { setActiveTab?: (tab: string) =
               difficulty: r.difficulty || 'MEDIUM'
             }));
 
-            const token = (await import('../../supabase')).supabase.auth.getSession().then(res => res.data.session?.access_token);
-            
-            const res = await fetch('http://localhost:3000/api/ai/summarize', {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-              },
-              body: JSON.stringify({ elderId, recentActivities: activities, aiEnabled: useAI })
-            });
-            if (res.ok) {
-              const data = await res.json();
-              setAiSummary({ text: data.summary, provider: data.provider });
-            } else {
-              setAiSummary({ text: t('ai_fallback_error', 'AI generation failed. Fallback to local.'), provider: 'error' });
-            }
+            const data = await generateAiSummary({ elderId, recentActivities: activities, aiEnabled: useAI });
+            setAiSummary({ text: data.summary, provider: data.provider });
           } catch (e) {
             console.error('AI Error', e);
+            setAiSummary({ text: t('ai_fallback_error', 'AI generation failed. Fallback to local.'), provider: 'error' });
           } finally {
             setIsAiLoading(false);
           }
@@ -174,6 +154,7 @@ export function ElderOverview({ setActiveTab }: { setActiveTab?: (tab: string) =
             {recommendation ? (
               <div>
                 <h4 className="font-bold text-2xl text-blue-800">{getGameName(recommendation.gameId)}</h4>
+                <p className="text-blue-600 font-medium capitalize">{recommendation.difficulty.toLowerCase()} {t('difficulty', 'Difficulty')}</p>
                 <p className="text-blue-800 mt-4 bg-white/60 p-4 rounded-lg text-sm">
                   {recommendation.reason}
                 </p>
@@ -241,9 +222,9 @@ export function ElderOverview({ setActiveTab }: { setActiveTab?: (tab: string) =
                     <td className="py-3 font-medium text-gray-900">{getGameName(session.gameId)}</td>
                     <td className="py-3">
                       {session.status === 'COMPLETED' ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Completed</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">{t('completed_status', 'Completed')}</span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">Abandoned</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">{t('abandoned_status', 'Abandoned')}</span>
                       )}
                     </td>
                     <td className="py-3 text-gray-700">

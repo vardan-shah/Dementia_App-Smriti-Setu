@@ -49,3 +49,17 @@ export async function createStory(data: { elderId: string, title: string, descri
   if (!res.ok) throw new Error('Failed to create story');
   return res.json();
 }
+
+export async function generateAiSummary(payload: { elderId: string, recentActivities: any[], aiEnabled: boolean }) {
+  const headers = await getAuthHeader().catch(() => ({})); // fallback if not authenticated
+  const res = await fetch(`${API_URL}/api/ai/summarize`, {
+    method: 'POST',
+    headers: {
+      ...headers,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('Failed to generate AI summary');
+  return res.json();
+}
