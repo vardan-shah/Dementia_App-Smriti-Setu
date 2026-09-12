@@ -35,10 +35,19 @@ PHASE 1 — VERIFIED COMPLETE
 Phase 2 — Memory-to-Game
 
 ## Status
-PHASE 2.0.1 — P0 HARDENING VERIFIED COMPLETE
+P0 VERIFIED COMPLETE
+
+## Completed (P0)
+- **Object Recognition Game**: Dynamic generation of distractors based on family members.
+- **Memory Vault & Stories**: Caregiver UI integrated and functionally localized.
+- **Offline Persistence**: Fully decoupled from network reliance utilizing Dexie local DB. 
+
+## Current Difficulty Algorithm
+- **Prototype Heuristic**: Utilizes basic threshold parameters around `errorRate` (NOT reinforcement learning / contextual bandit). 
 
 ## Next Phase
 Phase 2 P1 — Recall + Language Exercises
 
 ### Prototype limitation / future integration
-- Supabase Storage media upload integration for photo/voice files (currently uses Local blob/base64 cache for Offline operation).
+- **Full PRD Adaptive Engine**: The true contextual bandit / Q-value system belongs in the future personalization phase.
+- **Storage**: Supabase Storage media upload integration for photo/voice files (currently uses Local blob/base64 cache for Offline operation).
