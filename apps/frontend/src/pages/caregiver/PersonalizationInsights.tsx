@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
-import { computeBaselines, getCognitiveProfile, recommendNextActivity } from "../../services/personalization";
-import type { CognitiveProfile, ActivityRecommendation } from '../../services/personalization';
+import { computeBaselines, getCognitiveProfile } from "../../services/personalization";
+import { recommendNextActivity } from "../../services/personalization/recommendation";
+import { db } from '../../db';
+import type { CognitiveProfile } from '../../services/personalization';
+import type { ActivityRecommendation } from '../../services/personalization/recommendation';
+import type { AdaptiveArmState } from '../../services/personalization/adaptiveTypes';
 import { GAME_REGISTRY } from '../../config/games';
-import { Brain, Activity, BookOpen, Clock, Target } from 'lucide-react';
+import { Brain, Activity, BookOpen, Clock, Target, Bot, Settings } from 'lucide-react';
 import { CognitiveChangeRadar } from './CognitiveChangeRadar';
 
 const CATEGORY_ICONS: Record<string, any> = {
@@ -20,7 +24,15 @@ export function PersonalizationInsights() {
   
   const [profile, setProfile] = useState<CognitiveProfile | null>(null);
   const [recommendation, setRecommendation] = useState<ActivityRecommendation | null>(null);
+  const [adaptiveStates, setAdaptiveStates] = useState<AdaptiveArmState[]>([]);
   const [loading, setLoading] = useState(true);
+  const [useAI, setUseAI] = useState(localStorage.getItem('smriti_use_ai') === 'true');
+  const [aiSummary, setAiSummary] = useState<{ text: string; provider: string } | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('smriti_use_ai', useAI.toString());
+  }, [useAI]);
 
   useEffect(() => {
     async function loadData() {
@@ -28,12 +40,62 @@ export function PersonalizationInsights() {
       setLoading(true);
       try {
         await computeBaselines(elderId);
-        const [prof, rec] = await Promise.all([
+        const [prof, rec, states, recentSessions] = await Promise.all([
           getCognitiveProfile(elderId),
-          recommendNextActivity(elderId)
+          recommendNextActivity(elderId),
+          db.adaptiveArmStates.where('elderId').equals(elderId).toArray(),
+          db.performanceRecords.where('elderId').equals(elderId).reverse().limit(5).toArray()
         ]);
         setProfile(prof);
         setRecommendation(rec);
+        
+        // Find preferred difficulty per game (highest mean reward)
+        const bestStates: Record<string, AdaptiveArmState> = {};
+        states.forEach(s => {
+          if (!bestStates[s.gameId] || bestStates[s.gameId].meanReward < s.meanReward) {
+            bestStates[s.gameId] = s;
+          }
+        });
+        setAdaptiveStates(Object.values(bestStates));
+
+        // Generate AI Summary if enabled
+        if (useAI && recentSessions.length > 0) {
+          setIsAiLoading(true);
+          try {
+            const activities = recentSessions.map(r => ({
+              gameName: GAME_REGISTRY[r.gameId]?.name || r.gameId,
+              accuracy: r.accuracy || 0,
+              completed: r.status === 'COMPLETED',
+              difficulty: r.difficulty || 'MEDIUM'
+            }));
+
+            // Assume local dev backend is at localhost:3000
+            // Get session for auth if needed (mocked here or use actual Supabase auth if we have session)
+            const token = (await import('../../supabase')).supabase.auth.getSession().then(res => res.data.session?.access_token);
+            
+            const res = await fetch('http://localhost:3000/api/ai/summarize', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              },
+              body: JSON.stringify({ elderId, recentActivities: activities })
+            });
+            if (res.ok) {
+              const data = await res.json();
+              setAiSummary({ text: data.summary, provider: data.provider });
+            } else {
+              setAiSummary({ text: 'AI generation failed. Fallback to local.', provider: 'error' });
+            }
+          } catch (e) {
+            console.error('AI Error', e);
+          } finally {
+            setIsAiLoading(false);
+          }
+        } else {
+          setAiSummary(null);
+        }
+
       } catch (err) {
         console.error('Error loading personalization insights', err);
       } finally {
@@ -41,7 +103,7 @@ export function PersonalizationInsights() {
       }
     }
     loadData();
-  }, [elderId]);
+  }, [elderId, useAI]);
 
   if (!elderId) {
     return <div className="text-gray-500">Please select an elder profile.</div>;
@@ -56,7 +118,17 @@ export function PersonalizationInsights() {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Suggested Activity</h3>
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-xl font-bold text-gray-800">Recommended Activity</h3>
+          <div className="flex items-center gap-2">
+            <Settings className="w-4 h-4 text-gray-500" />
+            <label className="text-sm text-gray-600 flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={useAI} onChange={(e) => setUseAI(e.target.checked)} className="rounded" />
+              Use AI Summaries
+            </label>
+          </div>
+        </div>
+        
         {recommendation ? (
           <div>
             <div className="flex items-center gap-4 mb-2">
@@ -74,6 +146,42 @@ export function PersonalizationInsights() {
           </div>
         ) : (
           <p className="text-gray-500">No recommendation available.</p>
+        )}
+      </div>
+
+      {useAI && (
+        <div className="bg-indigo-50 rounded-xl shadow-sm border border-indigo-100 p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Bot className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-lg font-bold text-indigo-900">AI Summary</h3>
+          </div>
+          {isAiLoading ? (
+            <p className="text-indigo-600 text-sm">Generating contextual summary...</p>
+          ) : aiSummary ? (
+            <p className="text-indigo-800">{aiSummary.text}</p>
+          ) : (
+            <p className="text-indigo-600 text-sm">Insufficient data to generate summary.</p>
+          )}
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Adaptive Progress (Learning State)</h3>
+        {adaptiveStates.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {adaptiveStates.map(state => (
+              <div key={state.id} className="border border-gray-100 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-700">{getGameName(state.gameId)}</h4>
+                <div className="mt-2 text-sm">
+                  <p className="flex justify-between"><span className="text-gray-500">Preferred Difficulty:</span> <strong>{state.difficulty}</strong></p>
+                  <p className="flex justify-between"><span className="text-gray-500">Experience (Selections):</span> <strong>{state.selectionCount}</strong></p>
+                  <p className="flex justify-between"><span className="text-gray-500">Est. Reward (0-1):</span> <strong>{state.meanReward.toFixed(2)}</strong></p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500 text-sm">No adaptive learning history yet. The engine is building your baseline.</p>
         )}
       </div>
 

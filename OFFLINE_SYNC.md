@@ -33,3 +33,6 @@ The `TodayPlan` and caregiver `CulturalSettings` operate fundamentally on Dexie 
 
 ## Identity & UUID Integrity
 Front-end generated entities natively adopt `crypto.randomUUID()` implementations identically matching PostgreSQL's `uuid_generate_v4()`. This prevents database insertion failures and guarantees universal idempotency across the sync threshold without requiring complex schema translations.
+
+## Phase 6 Updates
+- Adaptive intelligence state (`adaptiveArmStates` and `adaptiveDecisions`) is fully derived from offline `performanceRecords`. If local data is lost, it can be deterministically rebuilt when synced back.

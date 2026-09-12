@@ -25,5 +25,9 @@ export async function buildApp() {
   app.register(relativeRoutes, { prefix: '/v1' });
   app.register(storiesRoutes, { prefix: '/v1' });
 
+  // Phase 6 Routes
+  const { aiRoutes } = await import('./routes/ai.js');
+  app.register(aiRoutes, { prefix: '/api' });
+
   return app;
 }

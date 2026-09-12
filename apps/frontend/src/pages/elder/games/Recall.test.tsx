@@ -17,7 +17,10 @@ vi.mock('../../../db', () => {
     db: {
       relatives: { where: whereMock, toArray: toArrayMock },
       memories: { where: whereMock, toArray: toArrayMock },
-      sessions: { add: vi.fn() }, performanceRecords: { add: vi.fn() }, transaction: vi.fn(async (mode, ...args) => { const cb = args.pop(); return cb(); }),
+      sessions: { add: vi.fn() },
+    performanceRecords: { add: vi.fn(), where: vi.fn(() => ({ equals: vi.fn(() => ({ filter: vi.fn(() => ({ reverse: vi.fn(() => ({ limit: vi.fn(() => ({ toArray: vi.fn().mockResolvedValue([]) })) })) })) })) })) },
+    adaptiveArmStates: { add: vi.fn(), update: vi.fn(), where: vi.fn(() => ({ equals: vi.fn(() => ({ filter: vi.fn(() => ({ first: vi.fn().mockResolvedValue(null) })) })) })) },
+    adaptiveDecisions: { add: vi.fn() }, transaction: vi.fn(async (mode, ...args) => { const cb = args.pop(); return cb(); }),
       syncEvents: { add: vi.fn() }
     }
   };

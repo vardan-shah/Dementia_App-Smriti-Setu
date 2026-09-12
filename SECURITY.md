@@ -29,3 +29,8 @@ The generic `/sync` append-only ledger validates payload mutations before applyi
 
 ## Database Level Authorization & RPCs (Phase 5.5)
 Elder permissions are further hardened at the PostgreSQL layer. Direct table `UPDATE` access to `public.reminders` has been fully revoked for Elders to prevent unauthorized alteration of title/time/recurrence settings via intercepted payloads. Instead, Elders only possess access to a `SECURITY DEFINER` Remote Procedure Call (`update_reminder_completion`) which executes an immutable `UPDATE` strictly bound to the `completed_today` and `last_completed_date` properties after validating `auth.uid() = elder_id`.
+
+## Phase 6 AI Boundary
+- External AI is strictly optional, default OFF. 
+- The frontend never receives API keys. External calls happen strictly on the Fastify backend.
+- Sensitive data is aggregated before being sent to external LLMs.

@@ -53,3 +53,10 @@ The system adopts an explicit event-sourcing paradigm where mutations (`CULTURAL
 
 ## Database Migrations & Reconciliation (Phase 5.5)
 The repository uses purely append-only schema evolution. A historical migration `20260912000003_phase5_cultural_reminders.sql` mistakenly referenced legacy schemas. Instead of mutating published history, a robust `20260912000004_phase5_5_reconciliation.sql` was introduced. This strictly enforces foreign keys against `elder_profiles` and utilizes a hardened Security Definer RPC (`update_reminder_completion`) to strictly isolate elder capabilities to modifying reminder completions, bounding all structural reminder mutations to Caregivers matching `caregiver_elder_links`.
+
+## Phase 6: Advanced Adaptive Intelligence
+- Replaced heuristic difficulty with an epsilon-greedy Contextual Bandit engine.
+- Multi-factor recommendation algorithm incorporating diversity, novelty, and cultural fit.
+- Dexie database upgraded to version 10 to include `adaptiveArmStates` and `adaptiveDecisions`.
+- Offline-first design allows full reconstruction of ML state from raw performance logs.
+

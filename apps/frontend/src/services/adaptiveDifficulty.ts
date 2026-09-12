@@ -1,4 +1,5 @@
 import { db } from '../db';
+import { selectDifficulty } from './personalization/adaptiveEngine';
 
 export type DifficultyLevel = 'EASY' | 'MEDIUM' | 'HARD';
 
@@ -22,49 +23,47 @@ const DIFFICULTY_CONFIG = {
 
 export async function getRecommendedDifficulty(elderId: string, gameId: string): Promise<DifficultyLevel> {
   try {
-    const recentSessions = await db.sessions
-      .where('[gameId+elderId]')
-      .equals([gameId, elderId])
+    const recentRecords = await db.performanceRecords
+      .where('elderId')
+      .equals(elderId)
+      .filter(r => r.gameId === gameId)
       .reverse()
-      .limit(3) // Look at the last 3 sessions for this game
+      .limit(5)
       .toArray();
       
-    // Default if no history
-    if (recentSessions.length === 0) return 'MEDIUM';
+    // Try Phase 6 contextual bandit engine first
+    try {
+      const decision = await selectDifficulty(elderId, gameId, recentRecords);
+      return decision.selectedDifficulty;
+    } catch (engineErr) {
+      console.warn('Phase 6 Adaptive Engine failed, using P0 fallback', engineErr);
+    }
     
-    // Get the most recent difficulty played
-    const lastSession = recentSessions[0];
-    const lastMetrics: any = lastSession.metrics || {};
-    const currentDiff: DifficultyLevel = (lastMetrics.gameSpecificMetrics?.difficulty) || 'MEDIUM';
+    // Fallback: Legacy P0 Heuristic
+    if (recentRecords.length === 0) return 'MEDIUM';
     
-    // Evaluate recent metrics based on error rate heuristic, but bounded
-    const recentMetrics = recentSessions.map((s: any) => s.metrics).filter(Boolean);
+    const currentDiff: DifficultyLevel = (recentRecords[0].difficulty as DifficultyLevel) || 'MEDIUM';
     
     let totalCorrect = 0;
     let totalErrors = 0;
-    recentMetrics.forEach((m: any) => {
+    recentRecords.forEach((m: any) => {
       totalCorrect += m.correct || 0;
-      totalErrors += m.errors || 0;
+      totalErrors += m.incorrect || 0;
     });
 
     const errorRate = totalErrors / Math.max(1, totalCorrect + totalErrors);
     
     // Bounded transitions
-    if (errorRate <= 0.1 && recentSessions.length >= 2) {
-      // Consistently doing well
+    if (errorRate <= 0.1 && recentRecords.length >= 2) {
       if (currentDiff === 'EASY') return 'MEDIUM';
-      if (currentDiff === 'MEDIUM') return 'HARD';
       return 'HARD';
     } 
     
     if (errorRate >= 0.4) {
-      // Struggling
       if (currentDiff === 'HARD') return 'MEDIUM';
-      if (currentDiff === 'MEDIUM') return 'EASY';
       return 'EASY';
     }
     
-    // Otherwise keep current
     return currentDiff;
   } catch (err) {
     console.error('Error fetching difficulty:', err);

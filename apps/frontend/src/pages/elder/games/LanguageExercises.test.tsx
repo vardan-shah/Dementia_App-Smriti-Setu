@@ -12,7 +12,10 @@ vi.mock('react-i18next', () => {
 
 vi.mock('../../../db', () => ({
   db: {
-    sessions: { add: vi.fn() }, performanceRecords: { add: vi.fn() }, transaction: vi.fn(async (mode, ...args) => { const cb = args.pop(); return cb(); }),
+    sessions: { add: vi.fn() },
+    performanceRecords: { add: vi.fn(), where: vi.fn(() => ({ equals: vi.fn(() => ({ filter: vi.fn(() => ({ reverse: vi.fn(() => ({ limit: vi.fn(() => ({ toArray: vi.fn().mockResolvedValue([]) })) })) })) })) })) },
+    adaptiveArmStates: { add: vi.fn(), update: vi.fn(), where: vi.fn(() => ({ equals: vi.fn(() => ({ filter: vi.fn(() => ({ first: vi.fn().mockResolvedValue(null) })) })) })) },
+    adaptiveDecisions: { add: vi.fn() }, transaction: vi.fn(async (mode, ...args) => { const cb = args.pop(); return cb(); }),
     syncEvents: { add: vi.fn() }
   }
 }));

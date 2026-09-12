@@ -1,8 +1,12 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { SmritiSetuDB } from '../db';
 import { getRecommendedDifficulty } from './adaptiveDifficulty';
+
+vi.mock('./personalization/adaptiveEngine', () => ({
+  selectDifficulty: vi.fn().mockRejectedValue(new Error('Force fallback'))
+}));
 
 describe('Data Migration and Scoping', () => {
   let db: SmritiSetuDB;
@@ -100,34 +104,57 @@ describe('Data Migration and Scoping', () => {
     // So let's delete the real singleton DB contents for the test
     const realDb = (await import('../db')).db;
     await realDb.sessions.clear();
+    await realDb.performanceRecords.clear();
     
-    await realDb.sessions.add({
-      id: 's1',
-      gameId: 'object-recognition',
+    await realDb.performanceRecords.add({
+      id: 'p1',
       elderId: 'elderA',
-      status: 'COMPLETED',
-      startedAt: new Date().toISOString(),
-      metrics: { correct: 1, errors: 10 }
-    } as any);
-
-    await realDb.sessions.add({
-      id: 's2',
+      sessionId: 's1',
       gameId: 'object-recognition',
-      elderId: 'elderB',
       status: 'COMPLETED',
+      accuracy: 9,
+      incorrect: 10,
+      correct: 1,
+      difficulty: 'MEDIUM',
       startedAt: new Date().toISOString(),
-      metrics: { correct: 10, errors: 0, gameSpecificMetrics: { difficulty: 'MEDIUM' } }
+      completedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     } as any);
 
-    await realDb.sessions.add({
-      id: 's3',
+    await realDb.performanceRecords.add({
+      id: 'p2',
+      elderId: 'elderB',
+      sessionId: 's2',
       gameId: 'object-recognition',
-      elderId: 'elderB',
       status: 'COMPLETED',
+      accuracy: 100,
+      incorrect: 0,
+      correct: 10,
+      difficulty: 'MEDIUM',
       startedAt: new Date().toISOString(),
-      metrics: { correct: 10, errors: 0, gameSpecificMetrics: { difficulty: 'MEDIUM' } }
+      completedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     } as any);
 
+    await realDb.performanceRecords.add({
+      id: 'p3',
+      elderId: 'elderB',
+      sessionId: 's3',
+      gameId: 'object-recognition',
+      status: 'COMPLETED',
+      accuracy: 100,
+      incorrect: 0,
+      correct: 10,
+      difficulty: 'MEDIUM',
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    } as any);
+
+    // Also disable phase 6 for this specific legacy fallback test by causing it to skip engine
+    // or we can let phase 6 work. But wait, Phase 6 bounds its random exploration.
+    // Let's just mock selectDifficulty to throw so it falls back to the P0 heuristic which is exactly what we are testing here!
+    
     const difficultyA = await getRecommendedDifficulty('elderA', 'object-recognition');
     const difficultyB = await getRecommendedDifficulty('elderB', 'object-recognition');
 

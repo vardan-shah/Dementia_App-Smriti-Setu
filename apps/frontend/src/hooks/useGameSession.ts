@@ -113,9 +113,25 @@ export function useGameSession<T = any>(gameId: string, elderId: string | null):
     const { normalizePerformance } = await import('../services/personalization/normalization');
     const perfRecord = normalizePerformance(session);
     
-    await db.transaction('rw', db.sessions, db.performanceRecords, db.syncEvents, async () => {
+    // Determine context for adaptive updates
+    const { calculateContextKey, updateAdaptivePolicy } = await import('../services/personalization/adaptiveEngine');
+    const recentRecords = await db.performanceRecords
+      .where('elderId')
+      .equals(elderId)
+      .filter(r => r.gameId === gameId)
+      .reverse()
+      .limit(4) // 4 old + this new = 5 context window
+      .toArray();
+      
+    const lastDifficulty = recentRecords.length > 0 ? (recentRecords[0].difficulty || 'MEDIUM') : 'MEDIUM';
+    const contextKey = calculateContextKey(recentRecords, lastDifficulty);
+    
+    await db.transaction('rw', db.sessions, db.performanceRecords, db.syncEvents, db.adaptiveArmStates, db.adaptiveDecisions, async () => {
       await db.sessions.add(session as any);
       await db.performanceRecords.add(perfRecord);
+      
+      // Phase 6: Update Contextual Bandit Policy
+      await updateAdaptivePolicy(perfRecord, contextKey);
       
       await db.syncEvents.add({
         id: crypto.randomUUID(),

@@ -83,6 +83,8 @@ export class SmritiSetuDB extends Dexie {
   culturalProfiles!: EntityTable<import('../services/cultural/types').CulturalProfile, 'id'>;
   dailyPlans!: EntityTable<import('../services/cultural/types').DailyPlan, 'id'>;
   reminders!: EntityTable<import('../services/cultural/types').Reminder, 'id'>;
+  adaptiveArmStates!: EntityTable<import('../services/personalization/adaptiveTypes').AdaptiveArmState, 'id'>;
+  adaptiveDecisions!: EntityTable<import('../services/personalization/adaptiveTypes').AdaptiveDecision, 'id'>;
 
   constructor() {
     super('SmritiSetuDB');
@@ -141,6 +143,12 @@ export class SmritiSetuDB extends Dexie {
       culturalProfiles: 'id, elderId, region, preferredLanguage',
       dailyPlans: 'id, elderId, date, [elderId+date]',
       reminders: 'id, elderId, enabled',
+    });
+
+    // v10 Schema: Adaptive Intelligence
+    this.version(10).stores({
+      adaptiveArmStates: 'id, [elderId+gameId], [elderId+gameId+difficulty], contextKey',
+      adaptiveDecisions: 'id, [elderId+gameId], contextKey',
     });
   }
 }
