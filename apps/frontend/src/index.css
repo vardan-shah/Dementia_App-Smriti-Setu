@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #1F2937; /* Trustworthy deep gray/blue */
+  --color-secondary: #0D9488; /* Calm teal */
+  --color-accent: #D97706; /* Warm amber */
+  --color-surface: #F9FAFB;
+  --color-surface-dark: #F3F4F6;
+  
+  --font-sans: "Inter", system-ui, sans-serif;
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-primary antialiased;
+    touch-action: pan-y;
+  }
+}
+
+/* Accessibility settings for ElderShell */
+html.text-normal {
+  font-size: 16px;
+}
+html.text-large {
+  font-size: 20px;
+}
+html.text-xlarge {
+  font-size: 24px;
+}
+
+html.high-contrast body, html.high-contrast #root {
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+html.high-contrast button, html.high-contrast a, html.high-contrast .card {
+  border: 2px solid #fff !important;
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.reduced-motion * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+html.reduced-motion * {
+  animation: none !important;
+  transition: none !important;
+}
