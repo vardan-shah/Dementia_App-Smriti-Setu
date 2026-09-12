@@ -4,9 +4,10 @@ import { ObjectRecognition } from './ObjectRecognition';
 import { MemoryRouter } from 'react-router-dom';
 import * as dbModule from '../../../db';
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string, def: string) => def })
-}));
+vi.mock('react-i18next', () => {
+  const mockT = vi.fn((key: string, def: string) => def);
+  return { useTranslation: () => ({ t: mockT }) };
+});
 
 vi.mock('../../../db', () => {
   const toArrayMock = vi.fn();

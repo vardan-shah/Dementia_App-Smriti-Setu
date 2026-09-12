@@ -5,9 +5,10 @@ import { MemoryRouter } from 'react-router-dom';
 import * as dbModule from '../../../db';
 import { VOCABULARY } from '../../../data/vocabulary';
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string, def: string) => def })
-}));
+vi.mock('react-i18next', () => {
+  const mockT = vi.fn((key: string, def: string) => def);
+  return { useTranslation: () => ({ t: mockT }) };
+});
 
 vi.mock('../../../db', () => ({
   db: {
@@ -42,14 +43,15 @@ describe('Language Exercises Game', () => {
     );
 
     // Wait for load
+    let buttons: HTMLElement[] = [];
     await waitFor(() => {
       expect(screen.getByText('Match the Word')).toBeInTheDocument();
+      buttons = screen.getAllByRole('button').filter(b => 
+        b.textContent !== 'Exit Game' &&
+        b.getAttribute('aria-label') !== 'Play Instruction'
+      );
+      expect(buttons.length).toBeGreaterThanOrEqual(2);
     });
-
-    // Check options are rendered (EASY = 2 options)
-    const buttons = screen.getAllByRole('button');
-    // Options buttons + Exit Game button
-    expect(buttons.length).toBeGreaterThanOrEqual(3);
 
     const exitBtn = screen.getByText('Exit Game');
     fireEvent.click(exitBtn);
@@ -68,13 +70,15 @@ describe('Language Exercises Game', () => {
       </MemoryRouter>
     );
 
+    let buttons: HTMLElement[] = [];
     await waitFor(() => {
       expect(screen.getByText('Match the Word')).toBeInTheDocument();
+      buttons = screen.getAllByRole('button').filter(b => 
+        b.textContent !== 'Exit Game' &&
+        b.getAttribute('aria-label') !== 'Play Instruction'
+      );
+      expect(buttons.length).toBeGreaterThanOrEqual(2);
     });
-
-    // We don't easily know which item is chosen due to shuffle, but one of the buttons is correct.
-    // The test just proves buttons exist.
-    const buttons = screen.getAllByRole('button').filter(b => b.textContent !== 'Exit Game');
     
     // Pick the first option, if it's right it advances. We are just verifying it doesn't crash here.
     fireEvent.click(buttons[0]);

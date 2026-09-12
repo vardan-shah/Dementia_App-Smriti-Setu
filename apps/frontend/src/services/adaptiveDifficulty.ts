@@ -9,9 +9,9 @@ const DIFFICULTY_CONFIG = {
     HARD: { choices: 4 }
   },
   'recall': {
-    EASY: { studyItems: 2, candidateSetSize: 4 },
-    MEDIUM: { studyItems: 3, candidateSetSize: 6 },
-    HARD: { studyItems: 4, candidateSetSize: 8 }
+    EASY: { studyItems: 2, candidateSetSize: 4, studyDurationMs: 8000 },
+    MEDIUM: { studyItems: 3, candidateSetSize: 6, studyDurationMs: 6000 },
+    HARD: { studyItems: 4, candidateSetSize: 8, studyDurationMs: 5000 }
   },
   'language-exercises': {
     EASY: { choices: 2 },
@@ -57,7 +57,7 @@ export async function getRecommendedDifficulty(elderId: string, gameId: string):
 }
 
 export function getDifficultyConfig(gameId: 'object-recognition', level: DifficultyLevel): { choices: number };
-export function getDifficultyConfig(gameId: 'recall', level: DifficultyLevel): { studyItems: number, candidateSetSize: number };
+export function getDifficultyConfig(gameId: 'recall', level: DifficultyLevel): { studyItems: number, candidateSetSize: number, studyDurationMs: number };
 export function getDifficultyConfig(gameId: 'language-exercises', level: DifficultyLevel): { choices: number };
 export function getDifficultyConfig(gameId: 'object-recognition' | 'recall' | 'language-exercises', level: DifficultyLevel): any {
   return DIFFICULTY_CONFIG[gameId][level];

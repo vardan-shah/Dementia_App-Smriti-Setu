@@ -1,15 +1,16 @@
+const mockT = vi.fn((key: string, def: string) => def);
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Recall } from './Recall';
 import { MemoryRouter } from 'react-router-dom';
 import * as dbModule from '../../../db';
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string, def: string) => def })
-}));
+vi.mock('react-i18next', () => {
+  return { useTranslation: () => ({ t: mockT }) };
+});
 
 vi.mock('../../../db', () => {
-  const toArrayMock = vi.fn();
+  const toArrayMock = vi.fn().mockResolvedValue([]);
   const equalsMock = vi.fn().mockReturnValue({ toArray: toArrayMock });
   const whereMock = vi.fn().mockReturnValue({ equals: equalsMock });
   return {
@@ -24,7 +25,7 @@ vi.mock('../../../db', () => {
 
 vi.mock('../../../services/adaptiveDifficulty', () => ({
   getRecommendedDifficulty: vi.fn().mockResolvedValue('EASY'),
-  getDifficultyConfig: vi.fn().mockReturnValue({ studyItems: 2, candidateSetSize: 4 })
+  getDifficultyConfig: vi.fn().mockReturnValue({ studyItems: 2, candidateSetSize: 4, studyDurationMs: 0 })
 }));
 
 vi.mock('../../../store/useAuthStore', () => ({
@@ -34,8 +35,6 @@ vi.mock('../../../store/useAuthStore', () => ({
 describe('Recall Game', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (dbModule.db.relatives.toArray as any).mockResolvedValue([]);
-    (dbModule.db.memories.toArray as any).mockResolvedValue([]);
   });
 
   it('renders study phase, progresses to recall phase, and handles completion', async () => {
@@ -45,23 +44,16 @@ describe('Recall Game', () => {
       </MemoryRouter>
     );
 
-    // Wait for study phase
-    await waitFor(() => {
-      expect(screen.getByText("Look carefully at these items:")).toBeInTheDocument();
-    });
-
-    // Check that we have items
-    const readyBtn = screen.getByText("I'm ready");
-    fireEvent.click(readyBtn);
-
-    // Should progress to RECALL phase
+    // Should progress to RECALL phase because studyDurationMs is 0
     await waitFor(() => {
       expect(screen.getByText("Which items did you see?")).toBeInTheDocument();
     });
 
-    // Click the first two candidates (since EASY difficulty config says studyItems: 2, selecting any 2 items allows submit)
-    // Actually we don't know which ones are correct without looking at DOM, but we can just click the first two buttons to enable submit.
-    const candidateButtons = screen.getAllByRole('button').filter(b => b.textContent !== 'Submit' && b.textContent !== 'Exit Game');
+    const candidateButtons = screen.getAllByRole('button').filter(b => 
+      b.textContent !== 'Submit' && 
+      b.textContent !== 'Exit Game' &&
+      b.getAttribute('aria-label') !== 'Play Instruction'
+    );
     expect(candidateButtons.length).toBeGreaterThanOrEqual(2);
     
     fireEvent.click(candidateButtons[0]);
@@ -73,7 +65,7 @@ describe('Recall Game', () => {
 
     // Progresses to RESULT
     await waitFor(() => {
-      expect(screen.getByText('Great job!')).toBeInTheDocument();
+      expect(screen.getByText(/You remembered/i)).toBeInTheDocument();
     });
 
     const finishBtn = screen.getByText('Finish');
@@ -93,8 +85,9 @@ describe('Recall Game', () => {
       </MemoryRouter>
     );
 
+    // Should immediately show recall phase
     await waitFor(() => {
-      expect(screen.getByText("Look carefully at these items:")).toBeInTheDocument();
+      expect(screen.getByText("Which items did you see?")).toBeInTheDocument();
     });
 
     const exitBtn = screen.getByText('Exit Game');

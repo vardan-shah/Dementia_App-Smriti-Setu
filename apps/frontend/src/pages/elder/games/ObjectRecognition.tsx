@@ -122,7 +122,7 @@ export function ObjectRecognition() {
       onExit={() => finishGame(false)}
     >
       {currentRelative && (
-        <>
+        <div className="flex flex-col items-center w-full">
           <div className="w-full aspect-square md:h-80 md:w-auto mb-8 rounded-2xl overflow-hidden shadow-lg border-4 border-white bg-gray-200 flex-shrink-0">
             <img 
               src={currentRelative.photoLocal || currentRelative.photoUrl} 
@@ -133,7 +133,7 @@ export function ObjectRecognition() {
 
           <div className="grid grid-cols-1 gap-4 w-full">
             {options.map((opt) => {
-              let btnClass = "text-2xl py-6 rounded-2xl border-2 transition-all ";
+              let btnClass = "text-2xl py-6 min-h-[64px] rounded-2xl border-2 transition-all ";
               
               if (showResult) {
                 if (opt === currentRelative.name) {
@@ -159,7 +159,7 @@ export function ObjectRecognition() {
               );
             })}
           </div>
-        </>
+        </div>
       )}
     </GameShell>
   );

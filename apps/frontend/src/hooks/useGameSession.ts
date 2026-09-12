@@ -11,17 +11,17 @@ export interface GameMetrics {
   totalReactionTimeMs: number;
 }
 
-export interface UseGameSessionResult {
+export interface UseGameSessionResult<T = any> {
   difficulty: DifficultyLevel;
-  metrics: GameMetrics;
   loading: boolean;
   recordQuestionStart: () => void;
   recordAnswer: (isCorrect: boolean, optionsCount: number) => void;
+  recordGameSpecificMetrics: (metrics: Partial<T>) => void;
   finishGame: (completed: boolean) => Promise<void>;
   setDifficulty: (diff: DifficultyLevel) => void;
 }
 
-export function useGameSession(gameId: string, elderId: string | null): UseGameSessionResult {
+export function useGameSession<T = any>(gameId: string, elderId: string | null): UseGameSessionResult<T> {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>('MEDIUM');
@@ -29,12 +29,15 @@ export function useGameSession(gameId: string, elderId: string | null): UseGameS
   const sessionStartTimeRef = useRef(Date.now());
   const questionStartTimeRef = useRef(Date.now());
   
-  const [metrics, setMetrics] = useState<GameMetrics>({ 
-    correct: 0, 
-    errors: 0, 
-    optionsPresented: 0, 
-    totalReactionTimeMs: 0 
+  // Authoritative metric state held in refs to prevent finishGame race conditions
+  const metricsRef = useRef<GameMetrics>({
+    correct: 0,
+    errors: 0,
+    optionsPresented: 0,
+    totalReactionTimeMs: 0
   });
+
+  const specificMetricsRef = useRef<Partial<T>>({});
 
   useEffect(() => {
     async function init() {
@@ -57,14 +60,14 @@ export function useGameSession(gameId: string, elderId: string | null): UseGameS
 
   const recordAnswer = useCallback((isCorrect: boolean, optionsCount: number) => {
     const reactionTime = Date.now() - questionStartTimeRef.current;
-    
-    setMetrics(m => ({
-      ...m,
-      correct: isCorrect ? m.correct + 1 : m.correct,
-      errors: isCorrect ? m.errors : m.errors + 1,
-      optionsPresented: m.optionsPresented + optionsCount,
-      totalReactionTimeMs: m.totalReactionTimeMs + reactionTime
-    }));
+    metricsRef.current.correct += isCorrect ? 1 : 0;
+    metricsRef.current.errors += isCorrect ? 0 : 1;
+    metricsRef.current.optionsPresented += optionsCount;
+    metricsRef.current.totalReactionTimeMs += reactionTime;
+  }, []);
+
+  const recordGameSpecificMetrics = useCallback((payload: Partial<T>) => {
+    specificMetricsRef.current = { ...specificMetricsRef.current, ...payload };
   }, []);
 
   const finishGame = useCallback(async (completed: boolean) => {
@@ -73,18 +76,26 @@ export function useGameSession(gameId: string, elderId: string | null): UseGameS
     const sessionId = crypto.randomUUID();
     const completedAt = Date.now();
     
-    const totalAnswers = metrics.correct + metrics.errors;
-    const errorRate = totalAnswers > 0 ? metrics.errors / totalAnswers : 0;
+    const { correct, errors, totalReactionTimeMs, optionsPresented } = metricsRef.current;
+    const totalAnswers = correct + errors;
+    const errorRate = totalAnswers > 0 ? errors / totalAnswers : 0;
+    const accuracy = totalAnswers > 0 ? correct / totalAnswers : 0;
     
     const finalMetrics = {
-      ...metrics,
+      correct,
+      errors,
+      optionsPresented,
+      totalReactionTimeMs,
       avgReactionTimeMs: totalAnswers > 0 
-        ? Math.round(metrics.totalReactionTimeMs / totalAnswers) 
+        ? Math.round(totalReactionTimeMs / totalAnswers) 
         : 0,
       errorRate,
+      accuracy,
+      attempts: totalAnswers,
       timeOfDay: new Date().getHours(),
       gameSpecificMetrics: {
-        difficulty
+        difficulty,
+        ...specificMetricsRef.current
       }
     };
 
@@ -110,15 +121,15 @@ export function useGameSession(gameId: string, elderId: string | null): UseGameS
     });
     
     navigate('/elder/games');
-  }, [elderId, gameId, metrics, difficulty, navigate]);
+  }, [elderId, gameId, difficulty, navigate]);
 
   return {
     difficulty,
-    metrics,
     loading,
     recordQuestionStart,
     recordAnswer,
+    recordGameSpecificMetrics,
     finishGame,
-    setDifficulty // Exposing so games can batch state updates if needed
+    setDifficulty
   };
 }
