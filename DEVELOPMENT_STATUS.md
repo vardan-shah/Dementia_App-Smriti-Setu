@@ -12,7 +12,7 @@ VERIFIED COMPLETE
 - **Offline / Sync**: Local-first Dexie architecture, resilient append-only syncing (`syncEvents`) utilizing strict explicit `QUEUED` / `SYNCED` domain materialization.
 - **NER Culture**: 100% localized translation coverage for Assam, Arunachal Pradesh, Manipur, Meghalaya, Mizoram, Nagaland, Sikkim, Tripura.
 - **Core Activities**: Object Recognition, Recall, Language Exercises, Memory Vault.
-- **Database Reconciliation**: Phase 5 correctly bounds sync routes against `caregiver_elder_links` and `elder_profiles`, migrating legacy schema implementations properly without destroying user data.
+- **Database Reconciliation**: Phase 5 correctly bounds sync routes against `caregiver_elder_links` and `elder_profiles`, migrating legacy schema implementations properly without destroying user data. Follow-up `0004` reconciliation ensures Postgres structures match perfectly.
 
 ## Remaining Limitations
 - Browser speech synthesis remains platform-dependent (requires native OS TTS support for Assamese/Bengali to sound natural).

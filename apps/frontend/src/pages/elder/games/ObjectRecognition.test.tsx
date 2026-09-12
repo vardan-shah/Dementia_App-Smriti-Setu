@@ -71,7 +71,7 @@ describe('ObjectRecognition Game', () => {
     });
 
     // Check options are rendered (all 3 names should be present since numOptions = 3)
-    expect(screen.getByText('Meena')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Meena')).toBeInTheDocument());
     expect(screen.getByText('Rahul')).toBeInTheDocument();
     expect(screen.getByText('Anita')).toBeInTheDocument();
 
@@ -125,7 +125,7 @@ describe('ObjectRecognition Game', () => {
     await waitFor(() => expect(screen.getByText('Who is this?')).toBeInTheDocument());
     
     // For single relative, the answer is always Meena
-    const answerBtn = screen.getByText('Meena');
+    const answerBtn = await screen.findByText('Meena');
     fireEvent.click(answerBtn);
 
     await waitFor(() => {
