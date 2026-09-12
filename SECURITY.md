@@ -34,3 +34,7 @@ Elder permissions are further hardened at the PostgreSQL layer. Direct table `UP
 - External AI is strictly optional, default OFF. 
 - The frontend never receives API keys. External calls happen strictly on the Fastify backend.
 - Sensitive data is aggregated before being sent to external LLMs.
+
+## Phase 6.1 Enhancements
+- The AI provider boundary validates the caregiver's explicit `aiEnabled` preference on the server level, preventing accidental data egress.
+- AdaptiveDecision tables strictly separate the decision provenance from elder-facing UI, preventing unintentional disclosure of behavioral metrics to patients.

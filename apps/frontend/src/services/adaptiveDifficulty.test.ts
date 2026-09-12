@@ -112,7 +112,7 @@ describe('Data Migration and Scoping', () => {
       sessionId: 's1',
       gameId: 'object-recognition',
       status: 'COMPLETED',
-      accuracy: 9,
+      accuracy: 0.09,
       incorrect: 10,
       correct: 1,
       difficulty: 'MEDIUM',
@@ -127,7 +127,7 @@ describe('Data Migration and Scoping', () => {
       sessionId: 's2',
       gameId: 'object-recognition',
       status: 'COMPLETED',
-      accuracy: 100,
+      accuracy: 1.0,
       incorrect: 0,
       correct: 10,
       difficulty: 'MEDIUM',
@@ -142,7 +142,7 @@ describe('Data Migration and Scoping', () => {
       sessionId: 's3',
       gameId: 'object-recognition',
       status: 'COMPLETED',
-      accuracy: 100,
+      accuracy: 1.0,
       incorrect: 0,
       correct: 10,
       difficulty: 'MEDIUM',
@@ -159,9 +159,9 @@ describe('Data Migration and Scoping', () => {
     const difficultyB = await getRecommendedDifficulty('elderB', 'object-recognition');
 
     // elderA has high error rate -> EASY
-    expect(difficultyA).toBe('EASY');
+    expect(difficultyA.difficulty).toBe('EASY');
     
     // elderB has 0 error rate -> HARD
-    expect(difficultyB).toBe('HARD');
+    expect(difficultyB.difficulty).toBe('HARD');
   });
 });

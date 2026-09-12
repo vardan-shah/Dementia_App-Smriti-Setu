@@ -79,7 +79,7 @@ export function PersonalizationInsights() {
                 'Content-Type': 'application/json',
                 ...(token ? { 'Authorization': `Bearer ${token}` } : {})
               },
-              body: JSON.stringify({ elderId, recentActivities: activities })
+              body: JSON.stringify({ elderId, recentActivities: activities, aiEnabled: useAI })
             });
             if (res.ok) {
               const data = await res.json();

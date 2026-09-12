@@ -21,7 +21,7 @@ const DIFFICULTY_CONFIG = {
   }
 };
 
-export async function getRecommendedDifficulty(elderId: string, gameId: string): Promise<DifficultyLevel> {
+export async function getRecommendedDifficulty(elderId: string, gameId: string, sessionId?: string): Promise<{difficulty: DifficultyLevel, contextKey: string, decisionId?: string}> {
   try {
     const recentRecords = await db.performanceRecords
       .where('elderId')
@@ -33,16 +33,21 @@ export async function getRecommendedDifficulty(elderId: string, gameId: string):
       
     // Try Phase 6 contextual bandit engine first
     try {
-      const decision = await selectDifficulty(elderId, gameId, recentRecords);
-      return decision.selectedDifficulty;
+      const decision = await selectDifficulty(elderId, gameId, recentRecords, sessionId);
+      return { 
+        difficulty: decision.selectedDifficulty, 
+        contextKey: decision.contextKey, 
+        decisionId: decision.decisionId 
+      };
     } catch (engineErr) {
       console.warn('Phase 6 Adaptive Engine failed, using P0 fallback', engineErr);
     }
     
     // Fallback: Legacy P0 Heuristic
-    if (recentRecords.length === 0) return 'MEDIUM';
+    if (recentRecords.length === 0) return { difficulty: 'MEDIUM', contextKey: 'LEGACY_FALLBACK' };
     
-    const currentDiff: DifficultyLevel = (recentRecords[0].difficulty as DifficultyLevel) || 'MEDIUM';
+    const fallbackDifficulty = (recentRecords[0].gameSpecificMetrics?.difficulty || 'MEDIUM') as DifficultyLevel;
+    const currentDiff: DifficultyLevel = (recentRecords[0].difficulty as DifficultyLevel) || fallbackDifficulty;
     
     let totalCorrect = 0;
     let totalErrors = 0;
@@ -55,19 +60,19 @@ export async function getRecommendedDifficulty(elderId: string, gameId: string):
     
     // Bounded transitions
     if (errorRate <= 0.1 && recentRecords.length >= 2) {
-      if (currentDiff === 'EASY') return 'MEDIUM';
-      return 'HARD';
+      if (currentDiff === 'EASY') return { difficulty: 'MEDIUM', contextKey: 'LEGACY_FALLBACK' };
+      return { difficulty: 'HARD', contextKey: 'LEGACY_FALLBACK' };
     } 
     
     if (errorRate >= 0.4) {
-      if (currentDiff === 'HARD') return 'MEDIUM';
-      return 'EASY';
+      if (currentDiff === 'HARD') return { difficulty: 'MEDIUM', contextKey: 'LEGACY_FALLBACK' };
+      return { difficulty: 'EASY', contextKey: 'LEGACY_FALLBACK' };
     }
     
-    return currentDiff;
+    return { difficulty: currentDiff, contextKey: 'LEGACY_FALLBACK' };
   } catch (err) {
     console.error('Error fetching difficulty:', err);
-    return 'MEDIUM';
+    return { difficulty: 'MEDIUM', contextKey: 'LEGACY_FALLBACK' };
   }
 }
 

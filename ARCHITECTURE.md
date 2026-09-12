@@ -60,3 +60,8 @@ The repository uses purely append-only schema evolution. A historical migration 
 - Dexie database upgraded to version 10 to include `adaptiveArmStates` and `adaptiveDecisions`.
 - Offline-first design allows full reconstruction of ML state from raw performance logs.
 
+
+## Phase 6.1 Correctness
+- The contextual bandit algorithm is a lightweight, stochastic epsilon-greedy mechanism, not a heavy ML model.
+- `PerformanceRecords` are the absolute source of truth for all learning states. `AdaptiveDecision` is strictly used for logging and provenance.
+- Accuracy metrics strictly follow the canonical [0.0, 1.0] scale.

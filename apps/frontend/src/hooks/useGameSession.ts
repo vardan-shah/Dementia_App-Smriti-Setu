@@ -26,6 +26,10 @@ export function useGameSession<T = any>(gameId: string, elderId: string | null):
   const [loading, setLoading] = useState(true);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>('MEDIUM');
   
+  const sessionIdRef = useRef<string>(crypto.randomUUID());
+  const contextKeyRef = useRef<string>('LEGACY_FALLBACK');
+  const decisionIdRef = useRef<string | undefined>(undefined);
+  
   const sessionStartTimeRef = useRef(Date.now());
   const questionStartTimeRef = useRef(Date.now());
   
@@ -43,8 +47,10 @@ export function useGameSession<T = any>(gameId: string, elderId: string | null):
     async function init() {
       if (!elderId) return;
       try {
-        const rec = await getRecommendedDifficulty(elderId, gameId);
-        setDifficulty(rec);
+        const rec = await getRecommendedDifficulty(elderId, gameId, sessionIdRef.current);
+        setDifficulty(rec.difficulty);
+        contextKeyRef.current = rec.contextKey;
+        decisionIdRef.current = rec.decisionId;
       } catch (err) {
         console.error(err);
       } finally {
@@ -73,7 +79,7 @@ export function useGameSession<T = any>(gameId: string, elderId: string | null):
   const finishGame = useCallback(async (completed: boolean) => {
     if (!elderId) return;
 
-    const sessionId = crypto.randomUUID();
+    const sessionId = sessionIdRef.current;
     const completedAt = Date.now();
     
     const { correct, errors, totalReactionTimeMs, optionsPresented } = metricsRef.current;
@@ -114,17 +120,9 @@ export function useGameSession<T = any>(gameId: string, elderId: string | null):
     const perfRecord = normalizePerformance(session);
     
     // Determine context for adaptive updates
-    const { calculateContextKey, updateAdaptivePolicy } = await import('../services/personalization/adaptiveEngine');
-    const recentRecords = await db.performanceRecords
-      .where('elderId')
-      .equals(elderId)
-      .filter(r => r.gameId === gameId)
-      .reverse()
-      .limit(4) // 4 old + this new = 5 context window
-      .toArray();
-      
-    const lastDifficulty = recentRecords.length > 0 ? (recentRecords[0].difficulty || 'MEDIUM') : 'MEDIUM';
-    const contextKey = calculateContextKey(recentRecords, lastDifficulty);
+    const { updateAdaptivePolicy } = await import('../services/personalization/adaptiveEngine');
+    
+    const contextKey = contextKeyRef.current;
     
     await db.transaction('rw', db.sessions, db.performanceRecords, db.syncEvents, db.adaptiveArmStates, db.adaptiveDecisions, async () => {
       await db.sessions.add(session as any);

@@ -94,4 +94,67 @@ describe('AI Routes', () => {
     });
     expect(res.statusCode).toBe(400);
   });
+
+  it('bypasses external provider when aiEnabled is false even if keys exist', async () => {
+    process.env.GROQ_API_KEY = 'test_key';
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response('{}'));
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/ai/summarize',
+      payload: {
+        elderId: mockElderId,
+        aiEnabled: false,
+        recentActivities: []
+      }
+    });
+    
+    expect(res.statusCode).toBe(200);
+    expect(res.json().provider).toBe('local-fallback');
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it('allows external provider when aiEnabled is true', async () => {
+    process.env.GROQ_API_KEY = 'test_key';
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      choices: [{ message: { content: 'AI summary' } }]
+    }), { status: 200 }));
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/ai/summarize',
+      payload: {
+        elderId: mockElderId,
+        aiEnabled: true,
+        recentActivities: []
+      }
+    });
+    
+    expect(res.statusCode).toBe(200);
+    expect(res.json().provider).toBe('groq');
+    expect(res.json().summary).toBe('AI summary');
+    expect(fetchSpy).toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it('falls back to local when external provider fails', async () => {
+    process.env.GROQ_API_KEY = 'test_key';
+    const fetchSpy = vi.spyOn(global, 'fetch').mockRejectedValue(new Error('Network error'));
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/ai/summarize',
+      payload: {
+        elderId: mockElderId,
+        aiEnabled: true,
+        recentActivities: []
+      }
+    });
+    
+    expect(res.statusCode).toBe(200);
+    expect(res.json().provider).toBe('local-fallback');
+    expect(fetchSpy).toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
 });

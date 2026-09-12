@@ -15,8 +15,8 @@ export function calculateContextKey(recentRecords: PerformanceRecord[], lastDiff
     : 0;
   
   let perfBand = 'MODERATE';
-  if (avgAccuracy > 85) perfBand = 'STRONG';
-  else if (avgAccuracy < 50) perfBand = 'WEAK';
+  if (avgAccuracy > 0.85) perfBand = 'STRONG';
+  else if (avgAccuracy < 0.50) perfBand = 'WEAK';
 
   // 2. Engagement Band
   const completionRate = recentRecords.length > 0 
@@ -41,7 +41,7 @@ export function calculateReward(record: PerformanceRecord): number {
   
   // Accuracy contribution [-0.5, +0.5]
   if (record.accuracy !== undefined) {
-    const accuracyNormalized = (record.accuracy / 100) * 2 - 1; // 0= -1, 50= 0, 100= +1
+    const accuracyNormalized = (record.accuracy) * 2 - 1; // 0= -1, 50= 0, 100= +1
     reward += accuracyNormalized * 0.4;
   }
   
@@ -54,10 +54,12 @@ export function calculateReward(record: PerformanceRecord): number {
   return Math.max(-1, Math.min(1, reward));
 }
 
-export async function selectDifficulty(elderId: string, gameId: string, recentRecords: PerformanceRecord[] = []): Promise<{
+export async function selectDifficulty(elderId: string, gameId: string, recentRecords: PerformanceRecord[] = [], sessionId?: string): Promise<{
   selectedDifficulty: DifficultyLevel;
   reason: string;
   isExploration: boolean;
+  contextKey: string;
+  decisionId: string;
 }> {
   const lastRecord = recentRecords.length > 0 ? recentRecords[0] : undefined;
   const lastDifficulty = lastRecord?.difficulty || 'MEDIUM';
@@ -75,7 +77,7 @@ export async function selectDifficulty(elderId: string, gameId: string, recentRe
 
   // If no history at all or very sparse, fallback to deterministic or exploration
   if (arms.length === 0) {
-    return _recordDecision(elderId, gameId, contextKey, 'MEDIUM', true, 0, 'No historical data. Defaulting to MEDIUM.');
+    return _recordDecision(elderId, gameId, contextKey, 'MEDIUM', true, 0, 'No historical data. Defaulting to MEDIUM.', sessionId);
   }
 
   const isExploration = Math.random() < epsilon;
@@ -109,7 +111,7 @@ export async function selectDifficulty(elderId: string, gameId: string, recentRe
     }
   }
 
-  return _recordDecision(elderId, gameId, contextKey, chosenDifficulty, isExploration, estimatedReward, reason);
+  return _recordDecision(elderId, gameId, contextKey, chosenDifficulty, isExploration, estimatedReward, reason, sessionId);
 }
 
 async function _recordDecision(
@@ -119,10 +121,12 @@ async function _recordDecision(
   difficulty: DifficultyLevel, 
   wasExploration: boolean, 
   estimatedReward: number,
-  reason: string
+  reason: string,
+  sessionId?: string
 ) {
+  const decisionId = crypto.randomUUID();
   const decision: AdaptiveDecision = {
-    id: crypto.randomUUID(),
+    id: decisionId,
     elderId,
     gameId,
     contextKey,
@@ -130,6 +134,7 @@ async function _recordDecision(
     wasExploration,
     estimatedReward,
     reason,
+    sessionId,
     createdAt: new Date().toISOString()
   };
   await db.adaptiveDecisions.add(decision);
@@ -137,7 +142,9 @@ async function _recordDecision(
   return {
     selectedDifficulty: difficulty,
     reason,
-    isExploration: wasExploration
+    isExploration: wasExploration,
+    contextKey,
+    decisionId
   };
 }
 

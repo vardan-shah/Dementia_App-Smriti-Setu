@@ -26,3 +26,8 @@ The application attempts to use the configured provider (e.g., Gemini). If it fa
 - **Contextual Bandit Engine**: A true but lightweight contextual decision algorithm (epsilon-greedy contextual bandit) operating locally and deterministically. No 'fake ML'.
 - **AI Boundary Rules**: External AI (Groq/Gemini) is strictly optional, default OFF, and requires caregiver explicit opt-in. It is used solely for natural language summarization on the backend (/api/ai/summarize), without leaking API keys or PHI to the frontend.
 - **Deterministic Fallbacks**: If external AI fails or is disabled, the system transparently utilizes robust local heuristics.
+
+## Phase 6.1 Constraints
+- **No Clinical Interpretation**: The summarization provided by Groq/Gemini strictly offers encouraging engagement feedback, never diagnosis.
+- **Enforced Boundary**: The `aiEnabled` boolean is strictly evaluated on the Fastify backend; external API calls are physically impossible if opt-in is absent, regardless of configured secrets.
+- **Stochastic Behavior**: While the underlying heuristics and deterministic boundaries are fixed, the epsilon-greedy context bandit inherently produces stochastic exploration behaviors over time.

@@ -17,15 +17,15 @@ describe('Adaptive Engine (Phase 6)', () => {
 
     it('determines STRONG_HIGH context', () => {
       const records = [
-        { status: 'COMPLETED', accuracy: 90, difficulty: 'HARD' },
-        { status: 'COMPLETED', accuracy: 100, difficulty: 'HARD' }
+        { status: 'COMPLETED', accuracy: 0.9, difficulty: 'HARD' },
+        { status: 'COMPLETED', accuracy: 1.0, difficulty: 'HARD' }
       ] as any[];
       expect(calculateContextKey(records, 'HARD')).toBe('STRONG_HIGH_HARD');
     });
 
     it('determines WEAK_LOW context', () => {
       const records = [
-        { status: 'COMPLETED', accuracy: 20 },
+        { status: 'COMPLETED', accuracy: 0.2 },
         { status: 'ABANDONED',  },
         { status: 'ABANDONED',  }
       ] as any[];
@@ -39,14 +39,17 @@ describe('Adaptive Engine (Phase 6)', () => {
     });
 
     it('calculates proportional positive reward for accuracy', () => {
-      // Base 0.5 + (0.5 * 2 - 1)*0.4 = 0.5 + 0 = 0.5
-      expect(calculateReward({ status: 'COMPLETED', accuracy: 50 } as any)).toBe(0.5);
+      // Base 0.5 + (0.5 * 2 - 1)*0.4 = 0.5 + 0 = 0.5 (moderate/neutral)
+      expect(calculateReward({ status: 'COMPLETED', accuracy: 0.5 } as any)).toBe(0.5);
       
-      // Base 0.5 + (1.0 * 2 - 1)*0.4 = 0.5 + 0.4 = 0.9
-      expect(calculateReward({ status: 'COMPLETED', accuracy: 100 } as any)).toBe(0.9);
+      // Base 0.5 + (1.0 * 2 - 1)*0.4 = 0.5 + 0.4 = 0.9 (strongly positive)
+      expect(calculateReward({ status: 'COMPLETED', accuracy: 1.0 } as any)).toBe(0.9);
+      
+      // Base 0.5 + (0.0 * 2 - 1)*0.4 = 0.5 - 0.4 = 0.1 (negative/poor accuracy contribution)
+      expect(calculateReward({ status: 'COMPLETED', accuracy: 0.0 } as any)).toBeCloseTo(0.1);
       
       // Error penalty
-      expect(calculateReward({ status: 'COMPLETED', accuracy: 100, incorrect: 4 } as any)).toBeCloseTo(0.6); // 0.9 - 0.3
+      expect(calculateReward({ status: 'COMPLETED', accuracy: 1.0, incorrect: 4 } as any)).toBeCloseTo(0.6); // 0.9 - 0.3
     });
   });
 
@@ -67,7 +70,7 @@ describe('Adaptive Engine (Phase 6)', () => {
         { id: '2', elderId: mockElder, gameId: mockGame, contextKey: 'STRONG_HIGH_MEDIUM', difficulty: 'HARD', meanReward: 0.8, selectionCount: 50, rewardVariance: 0, lastSelectedAt: '', updatedAt: '' }
       ]);
       
-      const records = [{ status: 'COMPLETED', accuracy: 100, difficulty: 'MEDIUM' }] as any[];
+      const records = [{ status: 'COMPLETED', accuracy: 1.0, difficulty: 'MEDIUM' }] as any[];
       // The context will be STRONG_HIGH_MEDIUM. Epsilon will be min (0.05).
       
       // Since it's random, we might hit exploration 5% of the time. But 95% of the time, we hit HARD.
@@ -87,7 +90,7 @@ describe('Adaptive Engine (Phase 6)', () => {
         { id: '3', elderId: mockElder, gameId: mockGame, contextKey: 'MODERATE_HIGH_EASY', difficulty: 'HARD', meanReward: 0.9, selectionCount: 50, rewardVariance: 0, lastSelectedAt: '', updatedAt: '' }
       ]);
       
-      const records = [{ status: 'COMPLETED', accuracy: 60, difficulty: 'EASY' }] as any[];
+      const records = [{ status: 'COMPLETED', accuracy: 0.6, difficulty: 'EASY' }] as any[];
       vi.spyOn(Math, 'random').mockReturnValue(0.99); 
       
       const decision = await selectDifficulty(mockElder, mockGame, records);
@@ -101,14 +104,14 @@ describe('Adaptive Engine (Phase 6)', () => {
 
   describe('updateAdaptivePolicy & rebuildAdaptiveState', () => {
     it('accumulates mean rewards properly', async () => {
-      const record1 = { elderId: 'e1', gameId: 'g1', status: 'COMPLETED', accuracy: 100, difficulty: 'HARD' } as any;
+      const record1 = { elderId: 'e1', gameId: 'g1', status: 'COMPLETED', accuracy: 1.0, difficulty: 'HARD' } as any;
       await updateAdaptivePolicy(record1, 'STRONG_HIGH_HARD');
       
       let state = await db.adaptiveArmStates.toCollection().first();
       expect(state?.meanReward).toBe(0.9);
       expect(state?.selectionCount).toBe(1);
 
-      const record2 = { elderId: 'e1', gameId: 'g1', status: 'COMPLETED', accuracy: 50, difficulty: 'HARD' } as any; // reward = 0.5
+      const record2 = { elderId: 'e1', gameId: 'g1', status: 'COMPLETED', accuracy: 0.5, difficulty: 'HARD' } as any; // reward = 0.5
       await updateAdaptivePolicy(record2, 'STRONG_HIGH_HARD');
       
       state = await db.adaptiveArmStates.toCollection().first();
@@ -117,19 +120,36 @@ describe('Adaptive Engine (Phase 6)', () => {
     });
 
     it('rebuilds state from empty', async () => {
-      // Mock some records
-      await db.performanceRecords.bulkAdd([
-        { id: 'p1', elderId: 'e2', gameId: 'g1', createdAt: '2026-01-01', status: 'COMPLETED', accuracy: 50, difficulty: 'EASY' } as any,
-        { id: 'p2', elderId: 'e2', gameId: 'g1', createdAt: '2026-01-02', status: 'ABANDONED', difficulty: 'EASY' } as any,
-      ]);
+      // 1. Create PerformanceRecords
+      const p1 = { id: 'p1', elderId: 'e2', gameId: 'g1', createdAt: '2026-01-01', status: 'COMPLETED', accuracy: 0.5, difficulty: 'EASY' } as any;
+      const p2 = { id: 'p2', elderId: 'e2', gameId: 'g1', createdAt: '2026-01-02', status: 'COMPLETED', accuracy: 1.0, difficulty: 'HARD' } as any;
+      
+      await db.performanceRecords.bulkAdd([p1, p2]);
 
+      // 2. update adaptive state manually
+      await updateAdaptivePolicy(p1, 'MODERATE_MEDIUM_MEDIUM');
+      await updateAdaptivePolicy(p2, 'MODERATE_HIGH_EASY'); // simulated context for p2
+      
+      const beforeStates = await db.adaptiveArmStates.toArray();
+
+      // 3. clear adaptiveArmStates
+      await db.adaptiveArmStates.clear();
+      
+      // 4. rebuild
       await rebuildAdaptiveState('e2');
       
-      const states = await db.adaptiveArmStates.toArray();
-      // Should have processed 2 records and updated their respective contexts
-      expect(states.length).toBeGreaterThan(0);
-      const totalSelections = states.reduce((sum, s) => sum + s.selectionCount, 0);
-      expect(totalSelections).toBe(2);
+      // 5. compare resulting arm statistics
+      const afterStates = await db.adaptiveArmStates.toArray();
+      
+      expect(afterStates.length).toBe(beforeStates.length);
+      
+      // Ensure the stats match precisely
+      beforeStates.forEach(b => {
+        const a = afterStates.find(x => x.contextKey === b.contextKey && x.difficulty === b.difficulty);
+        expect(a).toBeDefined();
+        expect(a!.meanReward).toBeCloseTo(b.meanReward);
+        expect(a!.selectionCount).toBe(b.selectionCount);
+      });
     });
   });
 });

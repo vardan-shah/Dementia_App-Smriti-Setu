@@ -4,6 +4,7 @@ import { authenticate, supabaseService } from '../utils/authUtils.js';
 
 const aiRequestSchema = z.object({
   elderId: z.string().uuid(),
+  aiEnabled: z.boolean().default(false),
   recentActivities: z.array(z.object({
     gameName: z.string(),
     accuracy: z.number(),
@@ -16,7 +17,7 @@ export async function aiRoutes(app: FastifyInstance) {
   app.post('/ai/summarize', async (request, reply) => {
     try {
       const { user } = await authenticate(request);
-      const { elderId, recentActivities } = aiRequestSchema.parse(request.body);
+      const { elderId, recentActivities, aiEnabled } = aiRequestSchema.parse(request.body);
 
       // Verify Authorization: Caregiver must own the elder
       const { data: mapping } = await supabaseService.from('caregiver_elder_links')
@@ -34,9 +35,9 @@ export async function aiRoutes(app: FastifyInstance) {
       const groqKey = process.env.GROQ_API_KEY;
       const geminiKey = process.env.GEMINI_API_KEY;
 
-      if (!groqKey && !geminiKey) {
+      if (!aiEnabled || (!groqKey && !geminiKey)) {
         // Local Fallback 
-        app.log.info('AI Provider fallback: No keys configured.');
+        app.log.info(`AI Provider fallback: aiEnabled=${aiEnabled}, keys_present=${!!(groqKey || geminiKey)}`);
         return generateDeterministicSummary(recentActivities);
       }
 
