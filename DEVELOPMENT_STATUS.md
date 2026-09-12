@@ -59,3 +59,8 @@ PARTIALLY VERIFIED
 - [ ] physical Android test
 - [ ] live Supabase deployment
 - [ ] live RLS verification
+
+## Phase 8 Real-World Blockers
+- **Live Deployment**: Blocked by missing platform credentials/access (Vercel/Render).
+- **Live Supabase**: Blocked by missing Supabase access token/project reference.
+- **Physical Device**: Blocked by AI execution environment (cannot access physical Android hardware for PWA/TTS offline tests).
