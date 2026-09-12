@@ -61,10 +61,10 @@ export interface SyncEvent {
   type: string;
   entity?: string;
   payload: any;
-  status: 'PENDING' | 'SYNCED' | 'FAILED';
+  status: 'PENDING' | 'QUEUED' | 'SYNCED' | 'FAILED';
   createdAt: string;
-  retryCount: number;
   lastAttemptAt?: string;
+  retryCount?: number;
   errorMessage?: string;
 }
 

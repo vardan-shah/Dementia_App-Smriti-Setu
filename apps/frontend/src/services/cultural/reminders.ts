@@ -1,5 +1,6 @@
 import { db } from '../../db';
 import type { Reminder } from './types';
+import { syncManager } from '../../sync';
 
 export function validateReminder(reminder: Partial<Reminder>): string | null {
   if (!reminder.elderId) return 'Elder ID is required';
@@ -60,10 +61,12 @@ export async function toggleReminderCompletion(reminderId: string, completed: bo
   const reminder = await db.reminders.get(reminderId);
   if (reminder) {
     const todayDate = new Date().toLocaleDateString('en-CA');
-    await db.reminders.update(reminderId, { 
+    const updates = { 
       completedToday: completed,
       lastCompletedDate: completed ? todayDate : reminder.lastCompletedDate
-    });
+    };
+    await db.reminders.update(reminderId, updates);
+    await syncManager.enqueueEvent('REMINDER_UPDATED', { ...reminder, ...updates, id: reminderId }, 'reminder');
   }
 }
 
@@ -71,6 +74,7 @@ export async function addReminder(reminder: Reminder) {
   const error = validateReminder(reminder);
   if (error) throw new Error(error);
   await db.reminders.put(reminder);
+  await syncManager.enqueueEvent('REMINDER_CREATED', reminder, 'reminder');
 }
 
 export async function updateReminder(reminderId: string, updates: Partial<Reminder>) {
@@ -82,8 +86,13 @@ export async function updateReminder(reminderId: string, updates: Partial<Remind
   if (error) throw new Error(error);
   
   await db.reminders.update(reminderId, updates);
+  await syncManager.enqueueEvent('REMINDER_UPDATED', merged, 'reminder');
 }
 
 export async function deleteReminder(reminderId: string) {
-  await db.reminders.delete(reminderId);
+  const reminder = await db.reminders.get(reminderId);
+  if (reminder) {
+    await db.reminders.delete(reminderId);
+    await syncManager.enqueueEvent('REMINDER_DELETED', { id: reminderId, elderId: reminder.elderId }, 'reminder');
+  }
 }

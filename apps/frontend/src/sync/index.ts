@@ -54,9 +54,10 @@ export class SyncManager {
           });
 
           if (response.ok) {
-            await db.syncEvents.update(event.id, { status: 'SYNCED', lastAttemptAt: new Date().toISOString() });
-            console.log(`Successfully synced event ${event.id}`);
-            // In a real app we might delete SYNCED events eventually
+            const result = await response.json();
+            const newStatus = result.status === 'QUEUED' ? 'QUEUED' : 'SYNCED';
+            await db.syncEvents.update(event.id, { status: newStatus, lastAttemptAt: new Date().toISOString() });
+            console.log(`Successfully processed event ${event.id} -> ${newStatus}`);
           } else {
             const err = await response.json().catch(() => ({}));
             await this.markFailed(event.id, event.retryCount || 0, err.error || 'Server returned error');

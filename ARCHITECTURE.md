@@ -45,3 +45,8 @@ Provides an offline-first culturally tailored elder experience focusing natively
 - **Daily Assistance (`TodayPlan`)**: Generates deterministically each local day by merging a personalized cognitive activity recommendation with the culturally filtered prompts. Ensures stability on refresh.
 - **Reminders**: Elder-scoped local-only daily checklist without making clinical medical claims.
 - **Audio Interface**: Voice-first integration into the daily plan via existing `useGameAudio` (`speechSynthesis` fallback).
+
+## Final Sync Semantics (Phase 5.3)
+The system adopts an explicit event-sourcing paradigm where mutations (`CULTURAL_PROFILE_UPDATED`, `REMINDER_CREATED`) enqueue locally into IndexedDB as `SyncEvents`. The backend routes these into an append-only ledger (`sync_events`), returning a deterministic semantic acknowledgment:
+1. `QUEUED`: Event preserved securely, but unsupported/awaiting batch ingestion.
+2. `SYNCED`: Event parsed, authorized, and materialized robustly into the canonical PostgreSQL domain schemas (`cultural_profiles`, `reminders`).

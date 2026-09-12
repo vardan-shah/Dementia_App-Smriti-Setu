@@ -26,3 +26,7 @@ The Cognitive Change Radar computes its `ChangeSignal`s exclusively from the `pe
 
 ### Daily Assistance and Cultural Personalization (Phase 5)
 The `TodayPlan` and caregiver `CulturalSettings` operate fundamentally on Dexie `v9` (`culturalProfiles`, `dailyPlans`, `reminders`). The curated cultural content packs are bundled directly or cached natively, allowing the elder dashboard to mount, load daily plans, process reminders, and launch filtered activities with zero network calls upon waking.
+
+## Phase 5.3 Sync Semantics & Idempotency
+- **Event Acknowledgment**: When the frontend enqueues an event (`PENDING`), the `/sync` backend endpoint processes it. If the server only persists the event in `sync_events` (e.g. unknown payload format), it returns `status: "QUEUED"`. The frontend preserves this state without retrying, treating it securely stored but unprocessed. If the server successfully materializes the change into a domain table (e.g., `cultural_profiles` or `reminders`), it returns `status: "SYNCED"`.
+- **Domain Materialization**: The backend handles deduplication and idempotency via explicit `upsert` conflicts. Even if a `REMINDER_CREATED` is transmitted twice due to an edge-case network blip, the domain model enforces identical states via UUID upserts.

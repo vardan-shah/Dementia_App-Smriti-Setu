@@ -23,3 +23,6 @@
 
 ## Prototype Limitations
 - Security model is robust for a prototype but does not yet claim production-grade clinical compliance (e.g., HIPAA/GDPR).
+
+## Phase 5.3 Sync Authorization
+The generic `/sync` append-only ledger validates payload mutations before applying them to domain schemas (`cultural_profiles`, `reminders`). It completely ignores any generic `caregiver_id` appended in the payload. Instead, it extracts the target `elderId` and performs an independent `caregiver_elders` cross-check against the authenticated token's `user.id`. If authorization fails, the event is rejected cleanly with a `403 Forbidden`. Elders are strictly prevented from altering configuration parameters.
