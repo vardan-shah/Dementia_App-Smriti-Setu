@@ -28,3 +28,12 @@ Smriti Setu enforces a strict architectural boundary for core resource managemen
 ## Role Model
 - **Caregiver**: Owns profiles, manages elders. Authenticated via standard email/password (Supabase Auth).
 - **Elder**: Operates via paired devices. Device authenticates using Supabase Anonymous sign-in, which the backend securely binds to an `elder_profiles` record via the `elder_devices` mapping table. Strict `elderId` scoping ensures zero cross-contamination of sessions, recommendations, or baselines on shared hardware.
+
+## Cognitive Change Radar (Phase 4)
+Change Radar identifies persistent changes in an elder's activity-performance patterns relative to their own established baseline.
+- **Role**: Longitudinal monitoring. Not a clinical diagnosis engine.
+- **Model (`ChangeSignal`)**: Evaluates memory, language, reaction, and engagement metrics natively.
+- **Configuration**:
+  - `RECENT_WINDOW_SESSIONS = 5` (Evaluates the 5 most recent activities).
+  - `PERSISTENCE_THRESHOLD = 3` (Requires 3+ deviations to establish a persistent change signal, avoiding knee-jerk alerts).
+- **Execution**: Runs exclusively locally against `db.performanceRecords` and `db.cognitiveBaselines`.

@@ -5,7 +5,7 @@ import { normalizePerformance } from './normalization';
 import { computeBaselines } from './baseline';
 import { recommendNextActivity } from './recommendation';
 import { getCognitiveProfile } from './profile';
-import { PerformanceRecord } from './types';
+import type { PerformanceRecord } from './types';
 
 describe('Personalization Engine Core', () => {
   beforeEach(async () => {

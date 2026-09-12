@@ -1,5 +1,5 @@
 import { db } from '../../db';
-import { CognitiveCategory, CognitiveProfile, CognitiveProfileScore } from './types';
+import type { CognitiveCategory, CognitiveProfile, CognitiveProfileScore } from './types';
 import { MIN_BASELINE_SESSIONS } from './baseline';
 
 export async function getCognitiveProfile(elderId: string): Promise<CognitiveProfile> {

@@ -20,3 +20,6 @@ The frontend utilizes Dexie.js to manage local stores:
 
 ## Personalization Independence
 The recommendation engine and adaptive difficulty (`computeBaselines`, `recommendNextActivity`) read exclusively from the local `performanceRecords`. This guarantees that recommendations never degrade or stall due to network latency. The contextual-bandit algorithms (future) and current heuristics execute deterministically on the client.
+
+### Change Radar offline capability
+The Cognitive Change Radar computes its `ChangeSignal`s exclusively from the `performanceRecords` and `cognitiveBaselines` local tables. This ensures that caregivers can instantly review longitudinal shifts in cognitive performance even when viewing the dashboard entirely offline, bypassing complex backend analytical services.

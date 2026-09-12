@@ -1,6 +1,6 @@
 import { db } from '../../db';
 import { normalizePerformance } from './normalization';
-import { CognitiveBaseline, CognitiveCategory, PerformanceRecord } from './types';
+import type { CognitiveBaseline, CognitiveCategory, PerformanceRecord } from './types';
 
 export const MIN_BASELINE_SESSIONS = 3;
 

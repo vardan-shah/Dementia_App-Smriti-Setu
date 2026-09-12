@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import { CognitiveBaseline, PerformanceRecord } from '../services/personalization/types';
+import type { CognitiveBaseline, PerformanceRecord } from '../services/personalization/types';
 
 interface LocalProfile {
   id: string;
@@ -24,6 +24,7 @@ interface LocalSession {
   status: 'STARTED' | 'COMPLETED' | 'ABANDONED';
   startedAt: string;
   completedAt?: string;
+  metrics?: any;
 }
 
 export interface LocalRelative {
@@ -78,6 +79,7 @@ export class SmritiSetuDB extends Dexie {
   syncEvents!: EntityTable<SyncEvent, 'id'>;
   cognitiveBaselines!: EntityTable<CognitiveBaseline, 'id'>;
   performanceRecords!: EntityTable<PerformanceRecord, 'id'>;
+  changeSignals!: EntityTable<import('../services/radar/types').ChangeSignal, 'id'>;
 
   constructor() {
     super('SmritiSetuDB');
@@ -124,6 +126,11 @@ export class SmritiSetuDB extends Dexie {
     // v7 Schema: Add performanceRecords
     this.version(7).stores({
       performanceRecords: 'id, elderId, sessionId, gameId, status',
+    });
+
+    // v8 Schema: Add changeSignals
+    this.version(8).stores({
+      changeSignals: 'id, elderId, category, status, severity, lastObservedAt',
     });
   }
 }

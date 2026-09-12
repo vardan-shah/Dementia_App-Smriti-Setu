@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
-import { computeBaselines, getCognitiveProfile, CognitiveProfile, recommendNextActivity, ActivityRecommendation } from '../../services/personalization';
+import { computeBaselines, getCognitiveProfile, recommendNextActivity } from "../../services/personalization";
+import type { CognitiveProfile, ActivityRecommendation } from '../../services/personalization';
 import { GAME_REGISTRY } from '../../config/games';
 import { Brain, Activity, BookOpen, Clock, Target } from 'lucide-react';
+import { CognitiveChangeRadar } from './CognitiveChangeRadar';
 
 const CATEGORY_ICONS: Record<string, any> = {
   'Memory': Brain,
@@ -133,6 +135,8 @@ export function PersonalizationInsights() {
           <p className="text-gray-500">No profile data available yet.</p>
         )}
       </div>
+
+      <CognitiveChangeRadar />
     </div>
   );
 }

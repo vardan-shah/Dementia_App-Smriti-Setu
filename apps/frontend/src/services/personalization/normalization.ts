@@ -1,4 +1,4 @@
-import { PerformanceRecord } from './types';
+import type { PerformanceRecord } from './types';
 
 // The session object from Dexie (LocalSession with metrics payload)
 export function normalizePerformance(session: any): PerformanceRecord {
