@@ -11,10 +11,12 @@ const DIFFICULTY_CONFIG = {
 };
 
 export async function getRecommendedDifficulty(elderId: string, gameId: string): Promise<DifficultyLevel> {
-  // Simple heuristic based on recent performance
+  // P0 prototype heuristic for difficulty selection
+  // This is NOT the final PRD contextual-bandit implementation.
   try {
     const recentSessions = await db.sessions
-      .where('gameId').equals(gameId)
+      .where('[gameId+elderId]')
+      .equals([gameId, elderId])
       .reverse()
       .limit(5)
       .toArray();
@@ -22,7 +24,7 @@ export async function getRecommendedDifficulty(elderId: string, gameId: string):
     // Default if no history
     if (recentSessions.length === 0) return 'MEDIUM';
     
-    // In a real ML system, this would evaluate errorRate, avgReactionTimeMs, etc.
+    // Evaluate recent metrics based on naive error rate heuristic
     const recentMetrics = recentSessions.map((s: any) => s.metrics).filter(Boolean);
     if (recentMetrics.length === 0) return 'MEDIUM';
 

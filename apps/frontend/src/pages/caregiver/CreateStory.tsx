@@ -45,7 +45,7 @@ export function CreateStory() {
       };
 
       // 1. Save to IndexedDB immediately (Local-first)
-      await db.memoryStories.add(newStory);
+      await db.memories.add(newStory);
 
       // 2. Queue for sync
       await db.syncEvents.add({

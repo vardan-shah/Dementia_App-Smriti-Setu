@@ -19,7 +19,7 @@ export function MemoryVault() {
   ) || [];
 
   const stories = useLiveQuery(
-    () => id ? db.memoryStories.where('elderId').equals(id).toArray() : [],
+    () => id ? db.memories.where('elderId').equals(id).toArray() : [],
     [id]
   ) || [];
 
@@ -59,11 +59,11 @@ export function MemoryVault() {
         const fetchedStories = await fetchStories(id!);
         if (!isMounted) return;
 
-        await db.transaction('rw', db.memoryStories, async () => {
+        await db.transaction('rw', db.memories, async () => {
           for (const fs of fetchedStories) {
-            const existing = await db.memoryStories.get(fs.id);
+            const existing = await db.memories.get(fs.id);
             if (!existing || new Date(fs.updated_at) > new Date(existing.updatedAt)) {
-              await db.memoryStories.put({
+              await db.memories.put({
                 id: fs.id,
                 elderId: fs.elder_id,
                 relativeId: fs.relative_id,

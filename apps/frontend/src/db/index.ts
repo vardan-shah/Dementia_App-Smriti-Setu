@@ -19,6 +19,7 @@ interface LocalGame {
 interface LocalSession {
   id: string;
   gameId: string;
+  elderId: string; // Added to scope sessions to specific elders
   status: 'STARTED' | 'COMPLETED' | 'ABANDONED';
   startedAt: string;
   completedAt?: string;
@@ -69,12 +70,14 @@ export class SmritiSetuDB extends Dexie {
   profiles!: EntityTable<LocalProfile, 'id'>;
   games!: EntityTable<LocalGame, 'id'>;
   sessions!: EntityTable<LocalSession, 'id'>;
-  memoryStories!: EntityTable<LocalMemory, 'id'>;
+  memories!: EntityTable<LocalMemory, 'id'>;
   relatives!: EntityTable<LocalRelative, 'id'>;
   syncEvents!: EntityTable<SyncEvent, 'id'>;
 
   constructor() {
     super('SmritiSetuDB');
+    
+    // v3 Schema (Legacy)
     this.version(3).stores({
       profiles: 'id, fullName',
       games: 'id, templateId',
@@ -83,22 +86,29 @@ export class SmritiSetuDB extends Dexie {
       relatives: 'id, elderId, name',
       syncEvents: 'id, type, status, createdAt',
     });
+
+    // v4 Schema: Retain 'memories', update its schema indices, and migrate data in-place
     this.version(4).stores({
       profiles: 'id, fullName',
       games: 'id, templateId',
       sessions: 'id, gameId, status',
-      memoryStories: 'id, elderId, relativeId',
+      memories: 'id, elderId, relativeId', // Updated index
       relatives: 'id, elderId, name',
       syncEvents: 'id, type, status, createdAt',
-    }).upgrade(tx => {
-      // Migrate old memories to memoryStories if they exist
-      return tx.table('memories').toArray().then(memories => {
-        return tx.table('memoryStories').bulkAdd(memories.map(m => ({
-          ...m,
-          storyText: m.description, // migrate description to storyText
-          syncStatus: 'SYNCED'
-        })));
+    }).upgrade(async tx => {
+      // Migrate old memories in-place
+      await tx.table('memories').toCollection().modify(m => {
+        if (m.description && !m.storyText) {
+          m.storyText = m.description;
+          delete m.description;
+        }
+        m.syncStatus = 'SYNCED';
       });
+    });
+
+    // v5 Schema: Add elderId to sessions indexing
+    this.version(5).stores({
+      sessions: 'id, [gameId+elderId], gameId, elderId, status', // Re-indexed to include elderId and compound key
     });
   }
 }

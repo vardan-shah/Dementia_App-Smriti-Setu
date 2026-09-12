@@ -139,9 +139,11 @@ export function ObjectRecognition() {
     const session = {
       id: sessionId,
       gameId: 'object-recognition',
-      status: completed ? 'COMPLETED' : 'ABANDONED',
+      elderId, // Scoped to elder
+      status: 'COMPLETED' as const,
       startedAt: new Date(sessionStartTimeRef.current).toISOString(),
       completedAt: new Date(completedAt).toISOString(),
+      metrics: finalMetrics
     };
     
     await db.sessions.add(session as any);
