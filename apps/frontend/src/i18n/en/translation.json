@@ -67,5 +67,9 @@
   "enabled": "Enabled",
   "disabled": "Disabled",
   "save": "Save",
-  "no_reminders": "No reminders configured yet."
+  "no_reminders": "No reminders configured yet.",
+  "recurrence": "Recurrence",
+  "daily": "Daily",
+  "weekly": "Weekly",
+  "once": "Once"
 }

@@ -5,6 +5,7 @@ import type { CulturalProfile } from '../../services/cultural/types';
 import { Button } from '../../components/ui/Button';
 import { Map, Languages, Heart, Save, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { syncManager } from '../../sync';
 
 const REGIONS = ['Assam', 'Arunachal Pradesh', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Sikkim', 'Tripura'];
 const THEMES = ['Festivals', 'Food', 'Family', 'Nature'];
@@ -52,6 +53,10 @@ export function CulturalSettings() {
     } as CulturalProfile;
     
     await db.culturalProfiles.put(updated);
+    
+    // Sync to backend (sync_events table)
+    await syncManager.enqueueEvent('CULTURAL_PROFILE_UPDATED', updated, 'culturalProfile');
+    
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };

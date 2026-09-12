@@ -48,6 +48,7 @@ export interface Reminder {
   title: string;
   time: string; // HH:mm format
   enabled: boolean;
+  recurrence: 'DAILY' | 'WEEKLY' | 'ONCE';
   completedToday: boolean;
   lastCompletedDate?: string;
   createdAt: string;
