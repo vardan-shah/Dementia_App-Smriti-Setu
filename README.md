@@ -23,22 +23,37 @@ Smriti Setu is a deployable advanced prototype of an elder-first, caregiver-assi
 - `GROQ_API_KEY`: (Optional) Groq LLM token for caregiver insights.
 - `GEMINI_API_KEY`: (Optional) Gemini LLM token for caregiver insights.
 
-## Local Setup & Development Commands
+## Local Development Commands
 Install dependencies: `npm install` inside both `apps/frontend` and `apps/backend`.
 
-### Backend Startup
+### Backend Local Dev
 ```bash
 cd apps/backend
 npm run dev
 ```
-For production: `npm run build && npm run start`.
 
-### Frontend Startup
+### Frontend Local Dev
 ```bash
 cd apps/frontend
 npm run dev
 ```
-For production: `npm run build`.
+
+## Production Validation & Build
+
+### Backend Production Validation
+To explicitly validate backend production secrets without starting the server:
+```bash
+cd apps/backend
+NODE_ENV=production SUPABASE_URL=... SUPABASE_SERVICE_ROLE=... FRONTEND_URL=... npm run build
+```
+For production execution: `npm run build && npm run start`.
+
+### Frontend Production Validation
+To validate frontend variables and generate PWA assets:
+```bash
+cd apps/frontend
+NODE_ENV=production VITE_SUPABASE_URL=... VITE_SUPABASE_ANON_KEY=... VITE_API_URL=... npm run build
+```
 
 ### Database Migrations
 All Supabase migrations are located in `supabase/migrations`. Apply them in sequential order to setup tables, RLS policies, and triggers. Use the Supabase CLI: `supabase db push`.
