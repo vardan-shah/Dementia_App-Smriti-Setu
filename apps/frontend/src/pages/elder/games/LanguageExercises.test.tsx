@@ -12,7 +12,7 @@ vi.mock('react-i18next', () => {
 
 vi.mock('../../../db', () => ({
   db: {
-    sessions: { add: vi.fn() },
+    sessions: { add: vi.fn() }, performanceRecords: { add: vi.fn() }, transaction: vi.fn(async (mode, ...args) => { const cb = args.pop(); return cb(); }),
     syncEvents: { add: vi.fn() }
   }
 }));

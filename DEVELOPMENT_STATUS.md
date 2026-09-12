@@ -1,45 +1,43 @@
 # Smriti Setu Development Status
 
 ## Current Phase
-Phase 3 — Personalization Engine + Cognitive Profile
+Phase 3.1 — Personalization Correctness + Offline Hardening
 
 ## Status
 VERIFIED COMPLETE
 
-## Active Tasks (Phase 3)
-- [x] Telemetry Normalization
-- [x] Elder-Specific Baseline
-- [x] Adaptive Difficulty
-- [x] Activity Recommendation Engine
-- [x] Cognitive Profile
-- [x] Offline Personalization
-- [x] Testing & Verification
+## Active Tasks (Phase 3.1)
+- [x] Persist Canonical Performance Records
+- [x] Define Data Hierarchy (Source vs Derived)
+- [x] Integrate Baselines with Performance Records
+- [x] NOT_YET_MEASURED status for Attention category
+- [x] Raw metrics for Reaction profile (Removed 0-100 arbitrary score)
+- [x] Structured Recommendation Scoring (diversity, recency, performance)
+- [x] Game Metadata Registry (`config/games.ts`)
+- [x] Local-First Elder Home
+- [x] Strict Elder Isolation & Verification
+- [x] Testing & Architectural Documentation
+
+## Completed (Phase 3)
+- **Telemetry Normalization**: Mapped raw unstructured session payloads into `PerformanceRecord`s.
+- **Elder-Specific Baseline**: Calculates historical means and variance per game category using minimum-history constraints.
+- **Adaptive Difficulty**: Implemented bounded transitions driven by error rate thresholds to modulate game complexity without jarring leaps.
+- **Activity Recommendation Engine**: Scores available games locally to prioritize diversity and recency without network reliance.
+- **Cognitive Profile**: Built caregiver-facing analytical views with explicit non-clinical disclaimers.
 
 ## Completed (Phase 2 P1.1)
-- **GameShell Refactoring**: Refactored `GameShell` into a modular slot architecture supporting `instruction`, `audioControl`, `progress`, and `feedback` slots without forcing identical UI.
-- **Web Speech API TTS**: Created `useGameAudio` hook for offline localized text-to-speech instructions (`en-IN`, `hi-IN`, `bn-IN`, defaulting Assamese to Hindi).
-- **Session Telemetry Hardening**: Refactored `useGameSession` metrics accumulator into `useRef` to eliminate React state race conditions, ensuring deterministic payload generation for `finishGame()`.
-- **Recall Enhancements**: Rebuilt `Recall` study phase using precise interval timers, added mathematical analysis of `omittedItems` and `incorrectlySelected` for nuanced scoring, and integrated dual lookup (Relatives + Memories).
-- **Game Consistency**: Retrofitted `ObjectRecognition` and `LanguageExercises` onto the new `GameShell` slot architecture and `useGameAudio`.
-- **Testing**: Fixed JSDOM mock-induced infinite re-render loops caused by dynamic `useTranslation` references. Restored full 100% test pass rate across `Recall`, `LanguageExercises`, and `ObjectRecognition` test suites.
+- **GameShell Refactoring**: Modular slot architecture (`instruction`, `audioControl`, `progress`, `feedback`).
+- **Web Speech API TTS**: `useGameAudio` hook for offline localized text-to-speech.
 
-## Completed (Phase 2 P1)
-- Created `useGameSession` and `GameShell` to standardize telemetry, lifecycle, and UI layout.
-- Integrated `Recall` with Memory Vault content, adaptive difficulty (study items size).
-- Built `LanguageExercises` with localized picture-to-word matching and adaptive choices.
-- Four-language support fully preserved.
-
-## Completed (Phase 2 P0)
-- **Object Recognition Game**: Dynamic generation of distractors based on family members. Difficulty selection correctly acts as a single source of truth for generating options asynchronously.
-- **Memory Vault & Stories**: Caregiver UI integrated and functionally localized.
-- **Offline Persistence**: Fully decoupled from network reliance utilizing Dexie local DB. 
+## Completed (Phase 2 P1 & P0)
+- **Object Recognition Game**, **Recall**, and **Language Exercises** integrated with Memory Vault.
+- Fully decoupled from network reliance utilizing Dexie local DB.
 
 ## Current Capability Profile
-- **Personalization Engine**: Computes elder-specific baselines locally using Dexie. Generates bounded adaptive difficulty and recency/performance-based activity recommendations.
-- **Cognitive Profile**: Caregiver-facing non-clinical activity profile (Memory, Language, Reaction, Engagement).
-- **Difficulty Algorithm**: Bounded difficulty transitions derived from error rate heuristics (EASY, MEDIUM, HARD). *Contextual-bandit ML deferred to future phases*.
-- **Game Scoping**: Difficulty and session telemetry strictly isolated to the active `elderId`.
-- **Media**: Local blobs cached via IndexedDB (future phase will link to Supabase Storage).
+- **Personalization Engine**: Computes bounded adaptive difficulty and highly structured multi-factor activity recommendations via Dexie `performanceRecords`.
+- **Cognitive Profile**: Non-clinical profile displaying transparent real-world metrics (e.g., specific reaction time variants rather than arbitrary aggregated scores).
+- **Offline Reliability**: Elder UX guarantees instant rendering driven by cached IndexedDB profiles without blocking backend fetch requests.
+- **Algorithm Constraints**: Adaptive difficulty currently leverages bounded threshold heuristics. *Contextual-bandit ML deferred to future phases*.
 
 ## Next
-Ready for further directives.
+Ready for further directives (Phase 4).

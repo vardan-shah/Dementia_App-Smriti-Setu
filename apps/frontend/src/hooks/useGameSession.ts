@@ -109,15 +109,22 @@ export function useGameSession<T = any>(gameId: string, elderId: string | null):
       metrics: finalMetrics
     };
     
-    await db.sessions.add(session as any);
+    // Create canonical performance record
+    const { normalizePerformance } = await import('../services/personalization/normalization');
+    const perfRecord = normalizePerformance(session);
     
-    await db.syncEvents.add({
-      id: crypto.randomUUID(),
-      type: 'GAME_SESSION_COMPLETED',
-      payload: { ...session, metrics: finalMetrics },
-      status: 'PENDING',
-      createdAt: new Date().toISOString(),
-      retryCount: 0
+    await db.transaction('rw', db.sessions, db.performanceRecords, db.syncEvents, async () => {
+      await db.sessions.add(session as any);
+      await db.performanceRecords.add(perfRecord);
+      
+      await db.syncEvents.add({
+        id: crypto.randomUUID(),
+        type: 'GAME_SESSION_COMPLETED',
+        payload: { ...session, metrics: finalMetrics },
+        status: 'PENDING',
+        createdAt: new Date().toISOString(),
+        retryCount: 0
+      });
     });
     
     navigate('/elder/games');

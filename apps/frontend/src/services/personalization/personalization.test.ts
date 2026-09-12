@@ -7,13 +7,14 @@ import { recommendNextActivity } from './recommendation';
 import { getCognitiveProfile } from './profile';
 import { PerformanceRecord } from './types';
 
-describe('Personalization Engine', () => {
+describe('Personalization Engine Core', () => {
   beforeEach(async () => {
     await db.sessions.clear();
+    await db.performanceRecords.clear();
     await db.cognitiveBaselines.clear();
   });
 
-  it('normalizes session to PerformanceRecord', () => {
+  it('normalizes session to PerformanceRecord and correctly handles missing metrics', () => {
     const session = {
       id: 'sess_1',
       elderId: 'elder_1',
@@ -45,30 +46,29 @@ describe('Personalization Engine', () => {
     expect(record.gameSpecificMetrics.optionsPresented).toBe(30);
   });
 
-  it('computes baselines properly with insufficient data fallback', async () => {
-    // 1 session -> insufficient data for Memory (MIN_BASELINE_SESSIONS = 3)
+  it('migrates legacy sessions and computes baselines properly with insufficient data fallback', async () => {
+    // 1 legacy session (no performanceRecord yet)
     await db.sessions.add({
       id: 's1', gameId: 'object-recognition', elderId: 'elder_1', status: 'COMPLETED', startedAt: new Date().toISOString(),
       metrics: { accuracy: 0.8, avgReactionTimeMs: 1000 }
     } as any);
 
+    // computeBaselines should trigger migration
     const baselines1 = await computeBaselines('elder_1');
     expect(baselines1).toHaveLength(0); // Not enough for any category
 
-    // Add 2 more memory sessions
-    await db.sessions.add({
-      id: 's2', gameId: 'recall', elderId: 'elder_1', status: 'COMPLETED', startedAt: new Date().toISOString(),
-      metrics: { accuracy: 0.9, avgReactionTimeMs: 1200 }
-    } as any);
-    await db.sessions.add({
-      id: 's3', gameId: 'object-recognition', elderId: 'elder_1', status: 'COMPLETED', startedAt: new Date().toISOString(),
-      metrics: { accuracy: 0.7, avgReactionTimeMs: 1400 }
-    } as any);
+    const records1 = await db.performanceRecords.toArray();
+    expect(records1).toHaveLength(1); // Migrated!
+
+    // Add 2 more performance records manually
+    await db.performanceRecords.bulkPut([
+      { id: 's2_perf', sessionId: 's2', elderId: 'elder_1', gameId: 'recall', status: 'COMPLETED', accuracy: 0.9, avgReactionTimeMs: 1200 } as any,
+      { id: 's3_perf', sessionId: 's3', elderId: 'elder_1', gameId: 'object-recognition', status: 'COMPLETED', accuracy: 0.7, avgReactionTimeMs: 1400 } as any
+    ]);
 
     const baselines2 = await computeBaselines('elder_1');
     
-    // Engagement, Reaction, Memory should all have >=3 now
-    expect(baselines2.length).toBeGreaterThanOrEqual(3);
+    expect(baselines2.length).toBeGreaterThanOrEqual(3); // Engagement, Reaction, Memory
     
     const memoryB = baselines2.find(b => b.category === 'Memory');
     expect(memoryB).toBeDefined();
@@ -76,34 +76,65 @@ describe('Personalization Engine', () => {
     expect(memoryB?.mean).toBeCloseTo(0.8); // (0.8+0.9+0.7)/3
   });
 
-  it('generates non-clinical cognitive profile', async () => {
-    await db.sessions.add({
-      id: 's1', gameId: 'language-exercises', elderId: 'elder_1', status: 'COMPLETED', startedAt: new Date().toISOString(),
-      metrics: { accuracy: 0.9 }
+  it('generates non-clinical cognitive profile with proper reaction metrics and NOT_YET_MEASURED for Attention', async () => {
+    // Add baseline for language
+    await db.cognitiveBaselines.put({
+      id: 'elder_1_Language', elderId: 'elder_1', category: 'Language', mean: 0.9, variance: 0.01, sampleCount: 5, lastUpdatedAt: new Date().toISOString(), sourceGameIds: ['language-exercises']
+    });
+
+    await db.performanceRecords.add({
+      id: 's1', sessionId: 's1', gameId: 'language-exercises', elderId: 'elder_1', status: 'COMPLETED', 
+      startedAt: new Date().toISOString(), completedAt: new Date().toISOString(),
+      accuracy: 0.9, avgReactionTimeMs: 0
     } as any);
 
     const profile = await getCognitiveProfile('elder_1');
     
-    // 1 session for Language -> BUILDING_BASELINE
     const langScore = profile.scores.find(s => s.category === 'Language');
-    expect(langScore?.confidence).toBe('BUILDING_BASELINE');
+    expect(langScore?.confidence).toBe('BUILDING_BASELINE'); // Only 1 record in performanceRecords
+    expect(langScore?.score).toBe(90);
     
-    // 0 sessions for Attention -> INSUFFICIENT_DATA
     const attnScore = profile.scores.find(s => s.category === 'Attention');
-    expect(attnScore?.confidence).toBe('INSUFFICIENT_DATA');
+    expect(attnScore?.confidence).toBe('NOT_YET_MEASURED'); // Hardcoded properly
+    expect(attnScore?.score).toBeUndefined();
   });
 
-  it('recommendNextActivity factors recency and performance', async () => {
-    // Elder played object-recognition 10 times and did well
+  it('recommendNextActivity factors recency, performance, and diversity', async () => {
+    // Elder played object-recognition 10 times
     for(let i=0; i<10; i++) {
-      await db.sessions.add({
-        id: `s${i}`, gameId: 'object-recognition', elderId: 'elder_rec', status: 'COMPLETED', startedAt: new Date().toISOString(),
-        metrics: { correct: 10, errors: 0 }
+      await db.performanceRecords.add({
+        id: `perf_${i}`, sessionId: `s${i}`, gameId: 'object-recognition', elderId: 'elder_rec', status: 'COMPLETED', 
+        startedAt: new Date().toISOString(), completedAt: new Date().toISOString(),
+        accuracy: 1.0, errors: 0
       } as any);
     }
     
     const rec = await recommendNextActivity('elder_rec');
-    // It should recommend a DIFFERENT game because object-recognition was just played 10 times in a row
+    
+    // Recency penalty and diversity penalty should make it recommend a different game
     expect(rec.gameId).not.toBe('object-recognition');
+    expect(['recall', 'language-exercises']).toContain(rec.gameId);
+  });
+  
+  it('enforces strict elder isolation (Elder A cannot affect Elder B)', async () => {
+    await db.performanceRecords.bulkPut([
+      { id: 'perf_A1', sessionId: 'sA1', elderId: 'elder_A', gameId: 'object-recognition', status: 'COMPLETED', accuracy: 0.9 } as any,
+      { id: 'perf_A2', sessionId: 'sA2', elderId: 'elder_A', gameId: 'object-recognition', status: 'COMPLETED', accuracy: 0.9 } as any,
+      { id: 'perf_A3', sessionId: 'sA3', elderId: 'elder_A', gameId: 'object-recognition', status: 'COMPLETED', accuracy: 0.9 } as any,
+      
+      { id: 'perf_B1', sessionId: 'sB1', elderId: 'elder_B', gameId: 'object-recognition', status: 'COMPLETED', accuracy: 0.1 } as any
+    ]);
+
+    await computeBaselines('elder_A');
+    await computeBaselines('elder_B');
+
+    const profileA = await getCognitiveProfile('elder_A');
+    const profileB = await getCognitiveProfile('elder_B');
+
+    const memA = profileA.scores.find(s => s.category === 'Memory');
+    const memB = profileB.scores.find(s => s.category === 'Memory');
+
+    expect(memA?.confidence).toBe('STABLE_BASELINE');
+    expect(memB?.confidence).toBe('BUILDING_BASELINE'); // Only 1 record for B
   });
 });

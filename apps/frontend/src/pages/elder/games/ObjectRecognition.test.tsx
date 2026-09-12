@@ -16,7 +16,7 @@ vi.mock('../../../db', () => {
   return {
     db: {
       relatives: { where: whereMock, toArray: toArrayMock },
-      sessions: { add: vi.fn() },
+      sessions: { add: vi.fn() }, performanceRecords: { add: vi.fn() }, transaction: vi.fn(async (mode, ...args) => { const cb = args.pop(); return cb(); }),
       syncEvents: { add: vi.fn() }
     }
   };

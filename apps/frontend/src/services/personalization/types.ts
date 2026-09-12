@@ -34,12 +34,20 @@ export interface CognitiveBaseline {
   sourceGameIds: string[];
 }
 
-export type ProfileConfidence = 'INSUFFICIENT_DATA' | 'BUILDING_BASELINE' | 'STABLE_BASELINE';
+export type ProfileConfidence = 'INSUFFICIENT_DATA' | 'BUILDING_BASELINE' | 'STABLE_BASELINE' | 'NOT_YET_MEASURED';
+
+export interface ReactionMetrics {
+  currentMs: number;
+  baselineMs: number;
+  differenceMs: number;
+  trend: 'Improving' | 'Stable' | 'Declining';
+}
 
 export interface CognitiveProfileScore {
   category: CognitiveCategory;
-  score: number;
   confidence: ProfileConfidence;
+  score?: number; // 0-100 normalized score for Accuracy/Engagement
+  reactionMetrics?: ReactionMetrics;
 }
 
 export interface CognitiveProfile {

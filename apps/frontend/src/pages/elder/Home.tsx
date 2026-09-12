@@ -4,13 +4,15 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { recommendNextActivity, ActivityRecommendation } from '../../services/personalization';
+import { GAME_REGISTRY } from '../../config/games';
 import { useGameAudio } from '../../hooks/useGameAudio';
 import { Button } from '../../components/ui/Button';
 import { Play } from 'lucide-react';
+import { db } from '../../db';
 
 export function Home() {
   const { elderId } = useAuthStore();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { speak, isAvailable } = useGameAudio();
   
@@ -20,6 +22,17 @@ export function Home() {
   useEffect(() => {
     async function loadProfile() {
       if (!elderId) return;
+      
+      // Local first
+      const localProfile = await db.profiles.get(elderId);
+      if (localProfile) {
+        setProfile({ full_name: localProfile.fullName, primary_language: localProfile.primaryLanguage });
+        if (localProfile.primaryLanguage && localProfile.primaryLanguage !== i18n.language) {
+          i18n.changeLanguage(localProfile.primaryLanguage);
+        }
+      }
+
+      // Background sync
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) return;
 
@@ -33,13 +46,25 @@ export function Home() {
         if (response.ok) {
           const data = await response.json();
           setProfile(data);
+          
+          // Cache locally
+          await db.profiles.put({
+            id: data.id,
+            fullName: data.full_name,
+            primaryLanguage: data.primary_language,
+            updatedAt: new Date().toISOString()
+          });
+
+          if (data.primary_language && data.primary_language !== i18n.language) {
+            i18n.changeLanguage(data.primary_language);
+          }
         }
       } catch (err) {
-        console.error('Failed to load profile', err);
+        console.warn('Failed to background sync elder profile (likely offline)');
       }
     }
     loadProfile();
-  }, [elderId]);
+  }, [elderId, i18n]);
 
   useEffect(() => {
     async function getRecommendation() {
@@ -61,10 +86,13 @@ export function Home() {
     speak(`${t('today_activity', "Today's Activity")}. ${recommendation.reason}`);
   };
 
-  const GAME_NAMES: Record<string, string> = {
-    'object-recognition': t('memory_match_title', 'Memory Match'),
-    'recall': t('memory_recall_title', 'Memory Recall'),
-    'language-exercises': t('language_game_title', 'Match the Word')
+  const getGameName = (id: string) => {
+    // We could use t() for localized names based on registry mapping if desired
+    // For now we use the localized title explicitly, fallback to registry
+    if (id === 'object-recognition') return t('memory_match_title', 'Memory Match');
+    if (id === 'recall') return t('memory_recall_title', 'Memory Recall');
+    if (id === 'language-exercises') return t('language_game_title', 'Match the Word');
+    return GAME_REGISTRY[id]?.name || id;
   };
 
   return (
@@ -85,7 +113,7 @@ export function Home() {
         <div className="bg-white rounded-3xl p-8 shadow-sm border-4 border-primary max-w-2xl w-full text-center mt-8">
           <h3 className="text-3xl font-bold text-gray-800 mb-4">{t('today_activity', "Today's Activity")}</h3>
           <h4 className="text-4xl text-primary font-bold mb-6">
-            {GAME_NAMES[recommendation.gameId] || recommendation.gameId}
+            {getGameName(recommendation.gameId)}
           </h4>
           <p className="text-2xl text-gray-600 mb-10">{recommendation.reason}</p>
           

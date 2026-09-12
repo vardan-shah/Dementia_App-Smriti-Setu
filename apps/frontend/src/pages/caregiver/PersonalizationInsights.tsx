@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { computeBaselines, getCognitiveProfile, CognitiveProfile, recommendNextActivity, ActivityRecommendation } from '../../services/personalization';
+import { GAME_REGISTRY } from '../../config/games';
 import { Brain, Activity, BookOpen, Clock, Target } from 'lucide-react';
 
 const CATEGORY_ICONS: Record<string, any> = {
@@ -24,15 +25,11 @@ export function PersonalizationInsights() {
       if (!elderId) return;
       setLoading(true);
       try {
-        // Compute baselines dynamically
         await computeBaselines(elderId);
-        
-        // Load profile and recommendation
         const [prof, rec] = await Promise.all([
           getCognitiveProfile(elderId),
           recommendNextActivity(elderId)
         ]);
-        
         setProfile(prof);
         setRecommendation(rec);
       } catch (err) {
@@ -52,6 +49,8 @@ export function PersonalizationInsights() {
     return <div className="text-gray-500">Loading personalization data...</div>;
   }
 
+  const getGameName = (id: string) => GAME_REGISTRY[id]?.name || id.replace('-', ' ').toUpperCase();
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -63,7 +62,7 @@ export function PersonalizationInsights() {
                 <Target className="w-6 h-6" />
               </div>
               <div>
-                <h4 className="font-bold text-lg">{recommendation.gameId.replace('-', ' ').toUpperCase()}</h4>
+                <h4 className="font-bold text-lg">{getGameName(recommendation.gameId)}</h4>
                 <p className="text-gray-600 text-sm">Suggested for today</p>
               </div>
             </div>
@@ -96,10 +95,30 @@ export function PersonalizationInsights() {
                     <span className="font-semibold text-gray-700">{score.category}</span>
                   </div>
                   
-                  {score.confidence === 'INSUFFICIENT_DATA' ? (
+                  {score.confidence === 'NOT_YET_MEASURED' ? (
+                    <div className="text-gray-400 text-sm mt-auto">Not yet measured</div>
+                  ) : score.confidence === 'INSUFFICIENT_DATA' ? (
                     <div className="text-gray-400 text-sm mt-auto">Insufficient data</div>
                   ) : score.confidence === 'BUILDING_BASELINE' ? (
                     <div className="text-blue-500 text-sm mt-auto">Building baseline...</div>
+                  ) : score.reactionMetrics ? (
+                    <div className="flex flex-col gap-1 mt-auto">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Reaction Time</span>
+                        <span className="font-medium">{(score.reactionMetrics.currentMs / 1000).toFixed(2)} s</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Personal baseline</span>
+                        <span className="font-medium">{(score.reactionMetrics.baselineMs / 1000).toFixed(2)} s</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Difference</span>
+                        <span className={`font-medium ${score.reactionMetrics.differenceMs < 0 ? 'text-green-600' : score.reactionMetrics.differenceMs > 0 ? 'text-orange-500' : 'text-gray-600'}`}>
+                          {score.reactionMetrics.differenceMs > 0 ? '+' : ''}{(score.reactionMetrics.differenceMs / 1000).toFixed(2)} s
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">Trend: {score.reactionMetrics.trend}</div>
+                    </div>
                   ) : (
                     <div className="flex items-end gap-2 mt-auto">
                       <span className="text-3xl font-bold text-gray-900">{score.score}</span>

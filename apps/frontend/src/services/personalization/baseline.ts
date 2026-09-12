@@ -12,9 +12,10 @@ const GAME_CATEGORY_MAP: Record<string, CognitiveCategory[]> = {
 };
 
 export async function computeBaselines(elderId: string): Promise<CognitiveBaseline[]> {
-  const rawSessions = await db.sessions.where('elderId').equals(elderId).toArray();
-  const records = rawSessions.map(normalizePerformance);
+  // First, ensure all legacy sessions have been normalized to performanceRecords
+  await migrateLegacySessions(elderId);
 
+  const records = await db.performanceRecords.where('elderId').equals(elderId).toArray();
   const completedRecords = records.filter(r => r.status === 'COMPLETED');
   
   if (completedRecords.length === 0) {
@@ -61,6 +62,22 @@ export async function computeBaselines(elderId: string): Promise<CognitiveBaseli
   });
 
   return baselines;
+}
+
+// Ensure all raw sessions have a corresponding performanceRecord
+async function migrateLegacySessions(elderId: string) {
+  const sessions = await db.sessions.where('elderId').equals(elderId).toArray();
+  const existingRecords = await db.performanceRecords.where('elderId').equals(elderId).toArray();
+  
+  const existingSessionIds = new Set(existingRecords.map(r => r.sessionId));
+  const missingSessions = sessions.filter(s => !existingSessionIds.has(s.id));
+  
+  if (missingSessions.length > 0) {
+    const newRecords = missingSessions.map(normalizePerformance);
+    await db.transaction('rw', db.performanceRecords, async () => {
+      await db.performanceRecords.bulkPut(newRecords);
+    });
+  }
 }
 
 function calculateCategoryBaseline(elderId: string, category: CognitiveCategory, records: PerformanceRecord[]): CognitiveBaseline {

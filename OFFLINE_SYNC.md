@@ -1,22 +1,22 @@
-# Offline & Sync Strategy
+# Offline & Synchronization Strategy
 
-Smriti Setu is designed to be an **Offline-First** application for Elders. 
+## Offline-First Architecture
+Smriti Setu is designed to remain fully functional without an active internet connection. This is critical for elders who may use paired devices in environments with unreliable connectivity.
 
-## Phase 1.1 Current Implementation
+### IndexedDB (Dexie) Local Stores
+The frontend utilizes Dexie.js to manage local stores:
+- `profiles`: Caches active elder metadata (ensuring the Elder Home loads instantly offline).
+- `games`: Definitions for available therapeutic activities.
+- `sessions`: Raw source records of completed or abandoned activities.
+- `performanceRecords`: Normalized analytical records for personalization.
+- `cognitiveBaselines`: Derived rollup metrics per elder.
+- `memories` / `relatives`: Caches localized user-generated content.
+- `syncEvents`: Append-only transactional event log for outgoing changes.
 
-### Service Worker Caching
-- Handled by VitePWA. The application shell (HTML/JS/CSS) and basic translations are cached locally on first load, enabling the app to start up completely offline.
+## Sync Flow
+1. **Local Mutation**: Actions (like finishing a game) write updates to their respective local tables and insert a `syncEvent`.
+2. **Background Flush**: When `navigator.onLine` is true, the `useSync` hook flushes pending events via `POST /sync` to the backend.
+3. **Backend Resolution**: Fastify validates the event batch, enforces RLS, applies the transactions to PostgreSQL, and returns sync markers.
 
-### Event Queueing & Dexie
-- Actions taken in the app (e.g. playing a game, changing a setting) are pushed to an IndexedDB (`Dexie`) table `syncEvents` with a `PENDING` status.
-- A `SyncManager` listens for `online` window events and periodically polls to flush the queue.
-
-### Sync API
-- When flushing, the frontend passes events to `POST /sync`.
-- The backend validates the user's JWT Authorization token.
-- Validated events are appended to the `public.sync_events` PostgreSQL table.
-- Future phases will implement backend workers to process these events into relational changes (e.g., updating a baseline snapshot).
-
-### Read Operations
-- Currently, Caregiver and Elder operations (fetching the profiles) still enforce online network requests using `fetch` calls to the API. 
-- In future phases, these fetch queries will use TanStack Query combined with Dexie caching to allow fully offline reads of the dashboard and profiles.
+## Personalization Independence
+The recommendation engine and adaptive difficulty (`computeBaselines`, `recommendNextActivity`) read exclusively from the local `performanceRecords`. This guarantees that recommendations never degrade or stall due to network latency. The contextual-bandit algorithms (future) and current heuristics execute deterministically on the client.

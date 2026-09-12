@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import { CognitiveBaseline } from '../services/personalization/types';
+import { CognitiveBaseline, PerformanceRecord } from '../services/personalization/types';
 
 interface LocalProfile {
   id: string;
@@ -77,6 +77,7 @@ export class SmritiSetuDB extends Dexie {
   relatives!: EntityTable<LocalRelative, 'id'>;
   syncEvents!: EntityTable<SyncEvent, 'id'>;
   cognitiveBaselines!: EntityTable<CognitiveBaseline, 'id'>;
+  performanceRecords!: EntityTable<PerformanceRecord, 'id'>;
 
   constructor() {
     super('SmritiSetuDB');
@@ -118,6 +119,11 @@ export class SmritiSetuDB extends Dexie {
     // v6 Schema: Add cognitiveBaselines
     this.version(6).stores({
       cognitiveBaselines: 'id, [elderId+category], elderId',
+    });
+
+    // v7 Schema: Add performanceRecords
+    this.version(7).stores({
+      performanceRecords: 'id, elderId, sessionId, gameId, status',
     });
   }
 }
