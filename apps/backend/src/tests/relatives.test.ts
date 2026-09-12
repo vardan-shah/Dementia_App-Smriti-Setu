@@ -5,7 +5,7 @@ import { buildApp } from '../app.js';
 vi.mock('@supabase/supabase-js', () => {
   const mSupabase = {
     from: vi.fn().mockReturnThis(),
-    insert: vi.fn(),
+    insert: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     single: vi.fn(),
@@ -32,20 +32,10 @@ describe('Relatives API', () => {
   });
 
   it('POST /v1/relatives should create a relative', async () => {
-    // Mock the caregiver_elder_links check
+    // Mock the relative insert returning successfully (simulating RLS pass)
     mSupabase.single.mockResolvedValueOnce({
-      data: { caregiver_id: 'test-user-id', elder_id: '123e4567-e89b-12d3-a456-426614174000' },
+      data: { id: 'rel-1', name: 'Meena', relationship: 'daughter' },
       error: null
-    });
-    
-    // Mock the relative insert
-    mSupabase.insert.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue({
-          data: { id: 'rel-1', name: 'Meena', relationship: 'daughter' },
-          error: null
-        })
-      })
     });
 
     const response = await app.inject({
@@ -67,18 +57,6 @@ describe('Relatives API', () => {
   });
 
   it('GET /v1/relatives should return relatives', async () => {
-    // Mock link check (caregiver)
-    mSupabase.single.mockResolvedValueOnce({
-      data: { caregiver_id: 'test-user-id', elder_id: '123e4567-e89b-12d3-a456-426614174000' },
-      error: null
-    });
-
-    // Mock link check (elder)
-    mSupabase.single.mockResolvedValueOnce({
-      data: null,
-      error: { message: 'Not elder' }
-    });
-
     // Mock relatives query
     mSupabase.order.mockResolvedValueOnce({
       data: [{ id: 'rel-1', name: 'Meena', relationship: 'daughter' }],
@@ -99,11 +77,11 @@ describe('Relatives API', () => {
     expect(body[0].name).toBe('Meena');
   });
 
-  it('POST /v1/relatives should deny access if unlinked', async () => {
-    // Mock link check failing
+  it('POST /v1/relatives should deny access if unlinked (RLS error)', async () => {
+    // Mock the RLS rejection
     mSupabase.single.mockResolvedValueOnce({
       data: null,
-      error: { message: 'Row not found' }
+      error: { code: '42501', message: 'Row Level Security' }
     });
 
     const response = await app.inject({

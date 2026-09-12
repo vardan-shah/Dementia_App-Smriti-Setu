@@ -29,22 +29,28 @@ export interface LocalRelative {
   elderId: string;
   name: string;
   relationship: string;
-  photoUrl?: string; // Stored as base64 or blob URL locally if offline, or Supabase URL
+  photoLocal?: string; // base64 or blob for offline
+  photoUrl?: string;   // resolved Supabase URL
+  voiceLocal?: string;
   voiceUrl?: string;
   createdAt: string;
   updatedAt: string;
+  syncStatus: 'PENDING' | 'SYNCED' | 'FAILED';
 }
 
 export interface LocalMemory {
   id: string;
   elderId: string;
-  title: string;
-  description?: string;
   relativeId?: string;
+  title: string;
+  storyText?: string;
+  photoLocal?: string;
   photoUrl?: string;
+  voiceLocal?: string;
   voiceUrl?: string;
   createdAt: string;
   updatedAt: string;
+  syncStatus: 'PENDING' | 'SYNCED' | 'FAILED';
 }
 
 export interface SyncEvent {
@@ -63,7 +69,7 @@ export class SmritiSetuDB extends Dexie {
   profiles!: EntityTable<LocalProfile, 'id'>;
   games!: EntityTable<LocalGame, 'id'>;
   sessions!: EntityTable<LocalSession, 'id'>;
-  memories!: EntityTable<LocalMemory, 'id'>;
+  memoryStories!: EntityTable<LocalMemory, 'id'>;
   relatives!: EntityTable<LocalRelative, 'id'>;
   syncEvents!: EntityTable<SyncEvent, 'id'>;
 
@@ -76,6 +82,23 @@ export class SmritiSetuDB extends Dexie {
       memories: 'id, elderId, title',
       relatives: 'id, elderId, name',
       syncEvents: 'id, type, status, createdAt',
+    });
+    this.version(4).stores({
+      profiles: 'id, fullName',
+      games: 'id, templateId',
+      sessions: 'id, gameId, status',
+      memoryStories: 'id, elderId, relativeId',
+      relatives: 'id, elderId, name',
+      syncEvents: 'id, type, status, createdAt',
+    }).upgrade(tx => {
+      // Migrate old memories to memoryStories if they exist
+      return tx.table('memories').toArray().then(memories => {
+        return tx.table('memoryStories').bulkAdd(memories.map(m => ({
+          ...m,
+          storyText: m.description, // migrate description to storyText
+          syncStatus: 'SYNCED'
+        })));
+      });
     });
   }
 }

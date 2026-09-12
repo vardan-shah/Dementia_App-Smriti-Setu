@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { db } from '../../../db';
 import type { LocalRelative } from '../../../db';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
+import { useAuthStore } from '../../../store/useAuthStore';
+import { useSettingsStore } from '../../../store/useSettingsStore';
 
-// Helper to shuffle array
 function shuffle<T>(array: T[]): T[] {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -19,6 +20,9 @@ function shuffle<T>(array: T[]): T[] {
 export function ObjectRecognition() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const elderId = useAuthStore(s => s.elderId);
+  const settings = useSettingsStore();
+  
   const [relatives, setRelatives] = useState<LocalRelative[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -26,16 +30,23 @@ export function ObjectRecognition() {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
   
-  // Telemetry
-  const [startTime, setStartTime] = useState(Date.now());
-  const [metrics, setMetrics] = useState({ correct: 0, errors: 0, optionsPresented: 0 });
+  // Real Telemetry tracking
+  const sessionStartTimeRef = useRef(Date.now());
+  const questionStartTimeRef = useRef(Date.now());
+  const [metrics, setMetrics] = useState({ 
+    correct: 0, 
+    errors: 0, 
+    optionsPresented: 0, 
+    totalReactionTimeMs: 0 
+  });
 
   useEffect(() => {
     async function loadContent() {
+      if (!elderId) return;
       try {
-        const stored = await db.relatives.toArray();
-        // Filter those with photos
-        const withPhotos = stored.filter(r => r.photoUrl);
+        const stored = await db.relatives.where('elderId').equals(elderId).toArray();
+        // Use photoLocal or photoUrl
+        const withPhotos = stored.filter(r => r.photoLocal || r.photoUrl);
         setRelatives(shuffle(withPhotos));
       } catch (err) {
         console.error(err);
@@ -44,40 +55,48 @@ export function ObjectRecognition() {
       }
     }
     loadContent();
-  }, []);
+  }, [elderId]);
 
   const currentRelative = relatives[currentIndex];
 
   useEffect(() => {
     if (currentRelative && relatives.length > 0) {
-      setStartTime(Date.now());
-      // Difficulty handling: Hardcode 3 options for P0 medium
-      const numOptions = Math.min(3, relatives.length);
-      const correctAnswer = currentRelative.name;
+      questionStartTimeRef.current = Date.now();
       
+      // Determine difficulty options (Easy=2, Medium=3, Hard=4)
+      let numOptions = 3; 
+      // If we had adaptiveDifficulty stored, we'd use it here. E.g.
+      // if (settings.difficulty === 'EASY') numOptions = 2;
+      // For now, let's just make it standard 3, or check if we can simulate adaptive
+      numOptions = Math.min(3, relatives.length);
+
+      const correctAnswer = currentRelative.name;
       const pool = relatives.filter(r => r.id !== currentRelative.id).map(r => r.name);
       const distractors = shuffle(pool).slice(0, numOptions - 1);
       
       const combined = shuffle([correctAnswer, ...distractors]);
       setOptions(combined);
-      setMetrics(m => ({ ...m, optionsPresented: combined.length }));
+      
+      // Accumulate options presented for telemetry
+      setMetrics(m => ({ ...m, optionsPresented: m.optionsPresented + combined.length }));
       setShowResult(false);
       setSelectedAnswer(null);
     }
   }, [currentRelative, relatives]);
 
   const handleAnswer = (answer: string) => {
-    if (showResult) return; // Prevent multiple clicks
+    if (showResult) return;
     
     setSelectedAnswer(answer);
     setShowResult(true);
     const isCorrect = answer === currentRelative.name;
-    const rt = Date.now() - startTime;
+    const reactionTime = Date.now() - questionStartTimeRef.current;
     
     setMetrics(m => ({
       ...m,
       correct: isCorrect ? m.correct + 1 : m.correct,
       errors: isCorrect ? m.errors : m.errors + 1,
+      totalReactionTimeMs: m.totalReactionTimeMs + reactionTime
     }));
 
     if (isCorrect) {
@@ -98,12 +117,21 @@ export function ObjectRecognition() {
 
   const finishGame = async (completed: boolean) => {
     const sessionId = crypto.randomUUID();
+    const completedAt = Date.now();
+    
+    const finalMetrics = {
+      ...metrics,
+      avgReactionTimeMs: metrics.correct + metrics.errors > 0 
+        ? Math.round(metrics.totalReactionTimeMs / (metrics.correct + metrics.errors)) 
+        : 0
+    };
+
     const session = {
       id: sessionId,
       gameId: 'object-recognition',
       status: completed ? 'COMPLETED' : 'ABANDONED',
-      startedAt: new Date(Date.now() - 10000).toISOString(), // Mock start time for now
-      completedAt: new Date().toISOString(),
+      startedAt: new Date(sessionStartTimeRef.current).toISOString(),
+      completedAt: new Date(completedAt).toISOString(),
     };
     
     await db.sessions.add(session as any);
@@ -111,7 +139,7 @@ export function ObjectRecognition() {
     await db.syncEvents.add({
       id: crypto.randomUUID(),
       type: 'GAME_SESSION_COMPLETED',
-      payload: { ...session, metrics },
+      payload: { ...session, metrics: finalMetrics },
       status: 'PENDING',
       createdAt: new Date().toISOString(),
       retryCount: 0
@@ -120,15 +148,15 @@ export function ObjectRecognition() {
     navigate('/elder/games');
   };
 
-  if (loading) return <div className="text-2xl text-center mt-20">Loading game...</div>;
+  if (loading) return <div className="text-2xl text-center mt-20">{t('loading_game', 'Loading game...')}</div>;
 
   if (relatives.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
         <h2 className="text-3xl font-bold mb-4">{t('who_is_this', 'Who is this?')}</h2>
         <Card className="p-8 max-w-lg bg-orange-50 border-orange-200">
-          <p className="text-2xl mb-4">Ask a family member to add someone first.</p>
-          <Button onClick={() => navigate('/elder')} className="w-full text-xl py-4">Return Home</Button>
+          <p className="text-2xl mb-4">{t('ask_family_add_first', 'Ask a family member to add someone first.')}</p>
+          <Button onClick={() => navigate('/elder')} className="w-full text-xl py-4">{t('return_home', 'Return Home')}</Button>
         </Card>
       </div>
     );
@@ -137,8 +165,8 @@ export function ObjectRecognition() {
   if (!currentRelative) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <h2 className="text-4xl font-bold mb-6 text-green-600">Great job!</h2>
-        <Button onClick={() => finishGame(true)} className="text-xl py-4 px-8">Finish</Button>
+        <h2 className="text-4xl font-bold mb-6 text-green-600">{t('great_job', 'Great job!')}</h2>
+        <Button onClick={() => finishGame(true)} className="text-xl py-4 px-8">{t('finish', 'Finish')}</Button>
       </div>
     );
   }
@@ -149,7 +177,7 @@ export function ObjectRecognition() {
       
       <div className="w-full aspect-square md:h-80 md:w-auto mb-8 rounded-2xl overflow-hidden shadow-lg border-4 border-white bg-gray-200 flex-shrink-0">
         <img 
-          src={currentRelative.photoUrl} 
+          src={currentRelative.photoLocal || currentRelative.photoUrl} 
           alt="Relative" 
           className="w-full h-full object-cover"
         />
@@ -186,7 +214,7 @@ export function ObjectRecognition() {
 
       <div className="mt-8">
         <Button variant="outline" onClick={() => finishGame(false)} className="text-lg">
-          Exit Game
+          {t('exit_game', 'Exit Game')}
         </Button>
       </div>
     </div>

@@ -27,7 +27,7 @@ export async function elderRoutes(app: FastifyInstance) {
   // GET /elders
   app.get('/elders', async (request, reply) => {
     try {
-      const user = await authenticate(request);
+      const { user, userClient } = await authenticate(request);
       
       // Use service role to bypass RLS, but enforce business logic
       const { data: links, error: linkError } = await supabaseService
@@ -61,7 +61,7 @@ export async function elderRoutes(app: FastifyInstance) {
   // GET /elders/:id
   app.get('/elders/:id', async (request, reply) => {
     try {
-      const user = await authenticate(request);
+      const { user, userClient } = await authenticate(request);
       const { id: elderId } = getElderSchema.parse(request.params);
 
       // Verify link: either caregiver linked to elder, or elder device linked to elder
@@ -107,7 +107,7 @@ export async function elderRoutes(app: FastifyInstance) {
   // POST /elders
   app.post('/elders', async (request, reply) => {
     try {
-      const user = await authenticate(request);
+      const { user, userClient } = await authenticate(request);
       const { full_name, primary_language } = createElderSchema.parse(request.body);
 
       // Transaction-like flow using service role to bypass chicken-and-egg RLS issue
@@ -146,7 +146,7 @@ export async function elderRoutes(app: FastifyInstance) {
   // POST /elders/:id/pairing
   app.post('/elders/:id/pairing', async (request, reply) => {
     try {
-      const user = await authenticate(request);
+      const { user, userClient } = await authenticate(request);
       const { id: elderId } = generatePairingCodeSchema.parse(request.params);
       
       // Verify caregiver link

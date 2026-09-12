@@ -17,7 +17,7 @@ export async function syncRoutes(app: FastifyInstance) {
   app.post('/sync', async (request, reply) => {
     try {
       // 1. Authenticate user securely
-      const user = await authenticate(request);
+      const { user, userClient } = await authenticate(request);
       
       // 2. Validate payload
       const event = syncEventSchema.parse(request.body);

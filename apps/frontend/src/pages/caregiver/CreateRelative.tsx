@@ -54,7 +54,6 @@ export function CreateRelative() {
       // Wait, API validation is `photoUrl: z.string().url().optional()`. Base64 string is technically NOT a standard URL to Zod unless we bypass it or treat it as local.
       // Let's rely on Dexie for local storage first for offline capability, and mock the API upload for now if it's base64, OR update the schema to allow base64.
       
-      // We will queue it to sync locally to meet the strictly offline requirement.
       const relativeId = crypto.randomUUID();
       
       const newRelative = {
@@ -62,15 +61,16 @@ export function CreateRelative() {
         elderId: id,
         name,
         relationship,
-        photoUrl: photoPreview,
+        photoLocal: photoPreview,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        syncStatus: 'PENDING' as const
       };
 
-      // Save to IndexedDB
+      // 1. Save to IndexedDB immediately (Local-first)
       await db.relatives.add(newRelative);
 
-      // Queue for sync
+      // 2. Queue for sync
       await db.syncEvents.add({
         id: crypto.randomUUID(),
         type: 'RELATIVE_CREATED',
@@ -80,23 +80,7 @@ export function CreateRelative() {
         retryCount: 0
       });
 
-      // Try API directly if online (ignoring the complex storage upload for this slice)
-      if (navigator.onLine) {
-        try {
-          // Since our Zod schema expects a URL, if we send base64 it might reject.
-          // We'll skip the direct API push and let the SyncManager handle it when it's updated to handle base64,
-          // OR we could push it to API without photoUrl to satisfy the DB, while local gets the photo.
-          await createRelative({
-            elderId: id,
-            name,
-            relationship,
-            photoUrl: photoPreview
-          });
-        } catch (apiError) {
-          console.warn('API sync deferred to background', apiError);
-        }
-      }
-
+      // Navigate back instantly
       navigate(`/caregiver/elders/${id}/vault`);
     } catch (err: any) {
       setError(err.message || 'Failed to save relative');

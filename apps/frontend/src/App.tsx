@@ -11,6 +11,7 @@ import { CreateElder } from './pages/caregiver/CreateElder';
 import { PairElder } from './pages/caregiver/PairElder';
 import { MemoryVault } from './pages/caregiver/MemoryVault';
 import { CreateRelative } from './pages/caregiver/CreateRelative';
+import { CreateStory } from './pages/caregiver/CreateStory';
 import { Pairing as ElderPairing } from './pages/elder/Pairing';
 import { Home as ElderHome } from './pages/elder/Home';
 import { Today as ElderToday } from './pages/elder/Today';
@@ -56,6 +57,7 @@ function App() {
             <Route path="elders/:id/pair" element={<PairElder />} />
             <Route path="elders/:id/vault" element={<MemoryVault />} />
             <Route path="elders/:id/vault/relative/new" element={<CreateRelative />} />
+            <Route path="elders/:id/vault/story/new" element={<CreateStory />} />
           </Route>
 
           {/* Protected Elder Routes */}

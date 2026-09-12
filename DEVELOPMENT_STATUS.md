@@ -32,21 +32,22 @@ PHASE 1 — VERIFIED COMPLETE
 - Caregiver creates elder workflow: SUCCESS
 
 ## Next Phase
-Phase 2 — Memory-to-Game Foundation (P0 Complete)
+Phase 2.0.1 — P0 Hardening & Defect Remediation Complete
 
 ## Phase 2: Memory-to-Game Foundation
-**Status**: P0 (Object Recognition & Memory Vault) VERIFIED COMPLETE
+**Status**: PHASE 2 P0 — VERIFIED COMPLETE
 
-### Completed
-- **Memory Vault**: Caregiver UI to view and add Relatives.
-- **Image Handling**: Client-side canvas compression scaling local images (max 800px) before `Dexie` / `IndexedDB` caching.
-- **Database & API**: Migrated `memories` schema for Phase 2 Relatives. API `POST/GET /v1/relatives` built with Zod validation.
-- **Offline First**: Added `LocalRelative` schema. Create flows queue `RELATIVE_CREATED` sync events.
-- **Object Recognition Game (P0)**: Dynamically generates distractor options using the real, caregiver-authored relative pool. Supports offline. Calculates reaction time/accuracy markers and saves them as `GAME_SESSION_COMPLETED` sync payload.
-- **Architecture**: Separated `services/api.ts` from UI layers.
+### Completed (P0 Hardened)
+- **Local-First Memory Vault**: Caregiver UI fully decoupled from network availability. Read/Write directly to IndexedDB first (`useLiveQuery`). Background fetch updates gracefully.
+- **Stories**: Created Caregiver `CreateStory.tsx` to handle title, text, and relative linking. Stories are completely offline-capable and sync properly.
+- **Offline Writes**: Extracted API push out of the critical flow. `RELATIVE_CREATED` and `STORY_CREATED` events push securely into the `SyncEvents` table.
+- **Object Recognition Game (P0)**: Hardened real gameplay. Uses Elder scope (`elderId`) to prevent data leakage between patients sharing a device.
+- **Telemetry**: Tracks actual `questionStartTime` to accurately trace `totalReactionTimeMs` and calculates `avgReactionTimeMs`, recording exactly how many options were presented dynamically, solving the hard-coded mock data defect.
+- **Database Architecture**: `SmritiSetuDB` migrated to v4 locally adding `memoryStories`. API backend refactored to consume dynamically generated `userClient` bounded to JWT, ensuring all PostgreSQL Row Level Security (RLS) protections natively secure inserts without redundant service-role interventions. 
+- **Localization**: Eliminated all hardcoded strings. Hindi, Assamese, Bengali, and English completely integrated for the Game and Vault features.
 
 ### Remaining (Phase 2 P1/P2)
 - Recall Game (P1)
 - Language Exercises (P1)
 - Automatic content generation pipeline (P2)
-- Memory Stories creation UI integration (P0 API exists, UI pending)
+- Supabase Storage media upload integration for photo/voice files (currently uses Local blob/base64 cache for Offline operation).

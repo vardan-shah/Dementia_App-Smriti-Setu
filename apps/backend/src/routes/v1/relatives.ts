@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { authenticate, supabaseService } from '../../utils/authUtils.js';
+import { authenticate } from '../../utils/authUtils.js';
 
 const relativeSchema = z.object({
   elderId: z.string().uuid(),
@@ -18,22 +18,11 @@ export async function relativeRoutes(app: FastifyInstance) {
   
   app.post('/relatives', async (request, reply) => {
     try {
-      const user = await authenticate(request);
+      const { user, userClient } = await authenticate(request);
       const data = relativeSchema.parse(request.body);
 
-      // Verify caregiver has access to this elder
-      const { data: link, error: linkError } = await supabaseService
-        .from('caregiver_elder_links')
-        .select('*')
-        .eq('caregiver_id', user.id)
-        .eq('elder_id', data.elderId)
-        .single();
-
-      if (linkError || !link) {
-        return reply.status(403).send({ error: 'Forbidden' });
-      }
-
-      const { data: relative, error: insertError } = await supabaseService
+      // We rely on PostgreSQL RLS policies to authorize this action via userClient
+      const { data: relative, error: insertError } = await userClient
         .from('relatives')
         .insert({
           elder_id: data.elderId,
@@ -46,7 +35,15 @@ export async function relativeRoutes(app: FastifyInstance) {
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        // Postgres RLS violations usually surface as missing return rows or permission errors
+        if (insertError.code === '42501' || insertError.details?.includes('Row Level Security')) {
+          return reply.status(403).send({ error: 'Forbidden' });
+        }
+        throw insertError;
+      }
+      
+      if (!relative) return reply.status(403).send({ error: 'Forbidden' });
       return reply.status(201).send(relative);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -60,29 +57,11 @@ export async function relativeRoutes(app: FastifyInstance) {
 
   app.get('/relatives', async (request, reply) => {
     try {
-      const user = await authenticate(request);
+      const { userClient } = await authenticate(request);
       const { elderId } = getRelativesQuerySchema.parse(request.query);
 
-      // Verify caregiver link or elder device link
-      const { data: cgLink } = await supabaseService
-        .from('caregiver_elder_links')
-        .select('*')
-        .eq('caregiver_id', user.id)
-        .eq('elder_id', elderId)
-        .single();
-        
-      const { data: elderLink } = await supabaseService
-        .from('elder_devices')
-        .select('*')
-        .eq('id', user.id)
-        .eq('elder_id', elderId)
-        .single();
-
-      if (!cgLink && !elderLink) {
-        return reply.status(403).send({ error: 'Forbidden' });
-      }
-
-      const { data: relatives, error } = await supabaseService
+      // RLS naturally scopes this to linked caregivers or the exact elder device.
+      const { data: relatives, error } = await userClient
         .from('relatives')
         .select('*')
         .eq('elder_id', elderId)
