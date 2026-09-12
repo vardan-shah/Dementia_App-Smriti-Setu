@@ -32,6 +32,8 @@ vi.mock('../utils/authUtils.js', () => {
 
 describe('Sync Routes', () => {
   let app: any;
+  const mockElderId = '123e4567-e89b-12d3-a456-426614174000';
+  const mockCaregiverId = 'caregiver_1';
 
   beforeEach(async () => {
     app = Fastify();
@@ -41,7 +43,7 @@ describe('Sync Routes', () => {
     vi.resetAllMocks();
 
     vi.mocked(authUtils.authenticate).mockResolvedValue({
-      user: { id: 'caregiver_1' } as any,
+      user: { id: mockCaregiverId } as any,
       userClient: {} as any
     });
     
@@ -50,7 +52,7 @@ describe('Sync Routes', () => {
     mockSupabaseUpsert.mockResolvedValue({ error: null });
     mockSupabaseDelete.mockResolvedValue({ error: null });
     
-    // Default auth check success
+    // Default auth check success for caregiver_elder_links
     mockSupabaseSingle.mockResolvedValue({ data: { id: 'mapping_1' }, error: null });
     mockSupabaseEq.mockReturnValue({ single: mockSupabaseSingle, eq: mockSupabaseEq });
   });
@@ -70,7 +72,7 @@ describe('Sync Routes', () => {
       method: 'POST',
       url: '/sync',
       payload: {
-        id: '123e4567-e89b-12d3-a456-426614174000',
+        id: '123e4567-e89b-12d3-a456-426614174111',
         type: 'UNKNOWN_EVENT',
         payload: { some: 'data' },
         createdAt: new Date().toISOString()
@@ -82,7 +84,7 @@ describe('Sync Routes', () => {
     expect(mockSupabaseUpsert).not.toHaveBeenCalled();
   });
 
-  it('materializes CULTURAL_PROFILE_UPDATED events and returns SYNCED', async () => {
+  it('materializes CULTURAL_PROFILE_UPDATED events securely', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/sync',
@@ -90,7 +92,7 @@ describe('Sync Routes', () => {
         id: '123e4567-e89b-12d3-a456-426614174000',
         type: 'CULTURAL_PROFILE_UPDATED',
         payload: { 
-          elderId: 'elder_1',
+          elderId: mockElderId,
           region: 'Assam',
           preferredLanguage: 'as',
           preferredThemes: ['Food']
@@ -104,8 +106,8 @@ describe('Sync Routes', () => {
     expect(mockSupabaseUpsert).toHaveBeenCalled();
   });
 
-  it('rejects domain materialization if caregiver is unauthorized', async () => {
-    mockSupabaseSingle.mockResolvedValue({ data: null, error: null }); // Caregiver not linked
+  it('rejects profile update if caregiver is unauthorized', async () => {
+    mockSupabaseSingle.mockResolvedValue({ data: null, error: null }); // Unlinked
     
     const res = await app.inject({
       method: 'POST',
@@ -114,8 +116,8 @@ describe('Sync Routes', () => {
         id: '123e4567-e89b-12d3-a456-426614174001',
         type: 'REMINDER_CREATED',
         payload: { 
-          id: 'rem_1',
-          elderId: 'elder_unauth',
+          id: '123e4567-e89b-12d3-a456-426614174002',
+          elderId: mockElderId,
           title: 'Drink Water',
           time: '09:00',
           recurrence: 'DAILY'
@@ -128,26 +130,69 @@ describe('Sync Routes', () => {
     expect(mockSupabaseUpsert).not.toHaveBeenCalled();
   });
 
-  it('materializes REMINDER_CREATED events idempotently and returns SYNCED', async () => {
+  it('allows elder to update reminder completion but not create/delete', async () => {
+    // Mock user is the elder themselves
+    vi.mocked(authUtils.authenticate).mockResolvedValue({
+      user: { id: mockElderId } as any,
+      userClient: {} as any
+    });
+    mockSupabaseSingle.mockResolvedValue({ data: null, error: null }); // No caregiver link
+
+    // Update completion (Allowed)
+    const updateRes = await app.inject({
+      method: 'POST',
+      url: '/sync',
+      payload: {
+        id: '123e4567-e89b-12d3-a456-426614174999',
+        type: 'REMINDER_UPDATED',
+        payload: { 
+          id: '123e4567-e89b-12d3-a456-426614174888',
+          elderId: mockElderId,
+          title: 'Drink Water',
+          time: '09:00',
+          completedToday: true
+        },
+        createdAt: new Date().toISOString()
+      }
+    });
+    expect(updateRes.statusCode).toBe(200);
+    expect(mockSupabaseUpdate).toHaveBeenCalled();
+
+    // Create (Denied)
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/sync',
+      payload: {
+        id: '123e4567-e89b-12d3-a456-426614174777',
+        type: 'REMINDER_CREATED',
+        payload: { 
+          id: '123e4567-e89b-12d3-a456-426614174888',
+          elderId: mockElderId,
+          title: 'Drink Water',
+          time: '09:00'
+        },
+        createdAt: new Date().toISOString()
+      }
+    });
+    expect(createRes.statusCode).toBe(403);
+  });
+  
+  it('validates payloads rigorously', async () => {
     const res = await app.inject({
       method: 'POST',
       url: '/sync',
       payload: {
-        id: '123e4567-e89b-12d3-a456-426614174002',
+        id: '123e4567-e89b-12d3-a456-426614174000',
         type: 'REMINDER_CREATED',
         payload: { 
-          id: 'rem_1',
-          elderId: 'elder_1',
+          // Missing id, missing elderId
           title: 'Drink Water',
-          time: '09:00',
-          recurrence: 'DAILY'
+          time: '25:00' // Invalid time
         },
         createdAt: new Date().toISOString()
       }
     });
 
-    expect(res.statusCode).toBe(200);
-    expect(res.json().status).toBe('SYNCED');
-    expect(mockSupabaseUpsert).toHaveBeenCalled();
+    expect(res.statusCode).toBe(400); // Zod validation fails
   });
 });

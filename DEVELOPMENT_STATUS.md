@@ -1,24 +1,24 @@
 # Smriti Setu Development Status
 
 ## Current Phase
-Phase 5 — NER Cultural Personalization + Daily Assistance
+Phase 5.4 — Database Schema Reconciliation
 
 ## Status
-VERIFIED COMPLETE
+IN PROGRESS
 
-## Completed (Phases 0 - 5)
+## Active Tasks (Phase 5.4)
+- [x] Canonical Schema mapping (`elder_profiles`, `caregiver_elder_links`).
+- [x] Evolve `public.reminders` migration instead of recreating.
+- [x] Backend Sync auth mapped to `caregiver_elder_links`.
+- [x] Zod explicit event schema validation for sync payloads.
+- [x] Tests enforcing schema reconciliation.
+
+## Completed (Phases 0 - 5.3)
 - **Change Radar**: Longitudinal performance deviation detection.
 - **Personalization Engine**: Structured Activity Recommendations, Adaptive Difficulty.
 - **Offline / Sync**: Local-first Dexie architecture, resilient append-only syncing (`syncEvents`) utilizing strict explicit `QUEUED` / `SYNCED` domain materialization.
-- **NER Culture**: 100% localized translation coverage for Assam, Arunachal Pradesh, Manipur, Meghalaya, Mizoram, Nagaland, Sikkim, Tripura. Profiles synchronize across the Caregiver matrix idempotently.
+- **NER Culture**: 100% localized translation coverage for Assam, Arunachal Pradesh, Manipur, Meghalaya, Mizoram, Nagaland, Sikkim, Tripura.
 - **Core Activities**: Object Recognition, Recall, Language Exercises, Memory Vault.
-
-## Current Capability Profile
-- **Personalization Engine**: Bounded adaptive difficulty and activity recommendations.
-- **Cognitive Profile & Change Radar**: Identifies longitudinal shifts natively.
-- **North-East Cultural UX**: Multilingual, multi-state daily prompts injected seamlessly into elder routines, leveraging both curated NER state trivia and private Caregiver memories deterministically without LLMs.
-- **Caregiver Reminders**: Strictly local-first daily checklists managed by the caregiver supporting `ONCE`, `DAILY`, and `WEEKLY` recurring sequences that map remotely through a secure, non-destructing sync engine.
-- **Offline Reliability**: The entire suite (activities, settings, reminders, and daily assistance) caches natively and survives network disconnection seamlessly.
 
 ## Remaining Limitations
 - Browser speech synthesis remains platform-dependent (requires native OS TTS support for Assamese/Bengali to sound natural).

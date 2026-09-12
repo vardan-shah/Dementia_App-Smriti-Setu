@@ -36,7 +36,7 @@ export function ManageReminders() {
         await updateReminder(editingId, { ...formData });
       } else {
         const newReminder: Reminder = {
-          id: `rem_${Date.now()}`,
+          id: crypto.randomUUID(),
           elderId,
           title: formData.title,
           time: formData.time,

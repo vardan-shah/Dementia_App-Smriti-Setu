@@ -10,7 +10,7 @@
 ### Role-Based Access Control (RBAC) & Row Level Security (RLS)
 - RLS is explicitly enabled on all core tables.
 - **Elders** can read their own profiles and activity via their anonymous device linkage.
-- **Caregivers** can read and manage data ONLY for elders they are explicitly linked to via `caregiver_elder_links`.
+- **Caregivers** can read and manage data ONLY for elder_profiles they are explicitly linked to via `caregiver_elder_links`.
 - Unauthenticated access is globally denied.
 
 ### API Security & Transactions (Phase 1.1)
@@ -25,4 +25,4 @@
 - Security model is robust for a prototype but does not yet claim production-grade clinical compliance (e.g., HIPAA/GDPR).
 
 ## Phase 5.3 Sync Authorization
-The generic `/sync` append-only ledger validates payload mutations before applying them to domain schemas (`cultural_profiles`, `reminders`). It completely ignores any generic `caregiver_id` appended in the payload. Instead, it extracts the target `elderId` and performs an independent `caregiver_elders` cross-check against the authenticated token's `user.id`. If authorization fails, the event is rejected cleanly with a `403 Forbidden`. Elders are strictly prevented from altering configuration parameters.
+The generic `/sync` append-only ledger validates payload mutations before applying them to domain schemas (`cultural_profiles`, `reminders`). It completely ignores any generic `caregiver_id` appended in the payload. Instead, it extracts the target `elderId` and performs an independent `caregiver_elder_links` cross-check against the authenticated token's `user.id`. If authorization fails, the event is rejected cleanly with a `403 Forbidden`. Elders are strictly prevented from altering configuration parameters.
