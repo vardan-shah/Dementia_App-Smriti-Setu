@@ -15,7 +15,7 @@ export async function getReminders(elderId: string): Promise<Reminder[]> {
     return r;
   }));
 
-  return updatedReminders.filter(r => r.enabled).sort((a, b) => a.time.localeCompare(b.time));
+  return updatedReminders.sort((a, b) => a.time.localeCompare(b.time));
 }
 
 export async function toggleReminderCompletion(reminderId: string, completed: boolean) {
@@ -31,4 +31,12 @@ export async function toggleReminderCompletion(reminderId: string, completed: bo
 
 export async function addReminder(reminder: Reminder) {
   await db.reminders.put(reminder);
+}
+
+export async function updateReminder(reminderId: string, updates: Partial<Reminder>) {
+  await db.reminders.update(reminderId, updates);
+}
+
+export async function deleteReminder(reminderId: string) {
+  await db.reminders.delete(reminderId);
 }

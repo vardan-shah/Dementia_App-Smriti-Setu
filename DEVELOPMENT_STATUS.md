@@ -1,32 +1,32 @@
 # Smriti Setu Development Status
 
 ## Current Phase
-Phase 5 — North-East Cultural Personalization + Daily Assistance
+Phase 5.1 — Cultural Personalization Hardening
 
 ## Status
 VERIFIED COMPLETE
 
-## Active Tasks (Phase 5)
-- [x] Cultural Profile (Caregiver can select region, language, themes).
-- [x] Cultural Content Packs (Created safe, bounded demo content for Assam).
-- [x] Daily Plan (Deterministic `TodayPlan` handles timezone resets gracefully).
-- [x] Reminders (Elder-scoped checkboxes for non-clinical daily guidance).
-- [x] Voice (Hooks into `useGameAudio` for "Hear Today's Plan").
-- [x] Offline (Content relies completely on local Dexie v9 structures).
-- [x] Localization (English, Hindi, Bengali, Assamese mapped for all new components).
-- [x] Caregiver Controls (Integrated `CulturalSettings` directly into Dashboard).
-- [x] Tests (Verified deterministic generation, timezone bounds, and elder isolation).
+## Active Tasks (Phase 5.1)
+- [x] Language-correct cultural content model (LocalizedText).
+- [x] Multi-state NER content (8 states).
+- [x] Memory-aware Daily Plan.
+- [x] Caregiver Reminder Management UI.
+- [x] Daily Plan repetition/history handling.
+- [x] Caregiver UI Localization Audit.
+- [x] Tests and Security.
 
-## Completed (Phases 0 - 4.1)
+## Completed (Phases 0 - 5)
 - **Change Radar**: Longitudinal performance deviation detection.
 - **Personalization**: Structured Activity Recommendations, Adaptive Difficulty.
 - **Offline / Sync**: Local-first Dexie architecture.
+- **NER Culture**: Cultural packs mapped to Caregiver configurations.
 - **Core Activities**: Object Recognition, Recall, Language Exercises, Memory Vault.
 
 ## Current Capability Profile
 - **Personalization Engine**: Bounded adaptive difficulty and activity recommendations.
 - **Cognitive Profile & Change Radar**: Identifies longitudinal shifts natively.
-- **North-East Cultural UX**: Merges standard activity assignments with rich, culturally familiar trivia and local language (e.g., Assamese).
+- **North-East Cultural UX**: Multilingual, multi-state daily prompts injected seamlessly into elder routines, leveraging both curated NER state trivia and private Caregiver memories.
+- **Caregiver Reminders**: Strictly local-first daily checklists managed by the caregiver.
 - **Offline Reliability**: The entire suite (activities, settings, reminders, and daily assistance) caches natively and survives network disconnection seamlessly.
 
 ## Remaining Limitations

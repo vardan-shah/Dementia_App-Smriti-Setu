@@ -3,8 +3,8 @@ import { supabase } from '../../supabase';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { getDailyPlan, getReminders, toggleReminderCompletion } from "../../services/cultural";
-import type { DailyPlan, Reminder } from '../../services/cultural';
+import { getDailyPlan, getReminders, toggleReminderCompletion, resolveLocalizedText } from '../../services/cultural';
+import type { DailyPlan, Reminder } from '../../services/cultural/types';
 import { ALL_CULTURAL_CONTENT } from '../../config/culturalPacks';
 import { useGameAudio } from '../../hooks/useGameAudio';
 import { Button } from '../../components/ui/Button';
@@ -20,6 +20,7 @@ export function Home() {
   const [profile, setProfile] = useState<any>(null);
   const [plan, setPlan] = useState<DailyPlan | null>(null);
   const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [memoryTitle, setMemoryTitle] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadProfile() {
@@ -63,6 +64,11 @@ export function Home() {
       const todayPlan = await getDailyPlan(elderId);
       setPlan(todayPlan);
       
+      if (todayPlan.memoryId) {
+        const m = await db.memories.get(todayPlan.memoryId);
+        if (m) setMemoryTitle(m.title);
+      }
+      
       const todayReminders = await getReminders(elderId);
       setReminders(todayReminders);
     }
@@ -86,17 +92,21 @@ export function Home() {
     : plan?.activityId === 'language-exercises' ? t('language_game_title', 'Match the Word')
     : plan?.activityId;
 
+  const currentLang = i18n.language || 'en';
+  const displayTitle = memoryTitle ? t('caregiver_memory', 'Caregiver Memory') : culturalItem ? resolveLocalizedText(culturalItem.title, currentLang) : '';
+  const displayPrompt = memoryTitle ? memoryTitle : culturalItem ? resolveLocalizedText(culturalItem.prompt, currentLang) : '';
+
   const speakPlan = () => {
     if (!isAvailable || !plan) return;
     const greeting = `${t('good_morning', 'Good morning')}.`;
     const activityMsg = `${t('todays_activity_is', "Today's activity is")} ${activityTitle}.`;
-    const promptMsg = culturalItem ? culturalItem.prompt : '';
+    const promptMsg = displayPrompt;
     const remindersMsg = reminders.length > 0 ? `${t('you_have', 'You have')} ${reminders.length} ${t('reminders', 'reminders')}.` : '';
     
     speak(`${greeting} ${activityMsg} ${promptMsg} ${remindersMsg}`);
   };
 
-  const dateStr = new Date().toLocaleDateString(i18n.language, { weekday: 'long', month: 'long', day: 'numeric' });
+  const dateStr = new Date().toLocaleDateString(currentLang, { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
     <div className="flex flex-col items-center min-h-[80vh] py-8 px-4 max-w-3xl mx-auto w-full">
@@ -114,10 +124,10 @@ export function Home() {
           <div className="bg-white rounded-3xl p-8 shadow-sm border-4 border-primary text-center">
             <h3 className="text-3xl font-bold text-gray-800 mb-4">{t('today', "Today")}</h3>
             
-            {culturalItem && (
+            {displayTitle && (
               <div className="bg-blue-50 text-blue-900 p-6 rounded-2xl mb-8 text-2xl text-left border border-blue-100">
-                <p className="font-semibold">{culturalItem.title}</p>
-                <p className="mt-2 text-blue-800">{culturalItem.prompt}</p>
+                <p className="font-semibold">{displayTitle}</p>
+                <p className="mt-2 text-blue-800">{displayPrompt}</p>
               </div>
             )}
             

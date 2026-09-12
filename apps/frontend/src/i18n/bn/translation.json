@@ -20,7 +20,7 @@
   "exit_game": "গেম থেকে প্রস্থান করুন",
   "save_story": "গল্প সংরক্ষণ করুন",
   "saving": "সংরক্ষণ করা হচ্ছে...",
-  "cancel": "বাতিল করুন",
+  "cancel": "Cancel",
   "son": "ছেলে",
   "daughter": "মেয়ে",
   "spouse": "স্ত্রী/স্বামী",
@@ -56,5 +56,16 @@
   "start_activity": "Start Activity",
   "loading": "Loading...",
   "you_have": "You have",
-  "todays_activity_is": "Today's activity is"
+  "todays_activity_is": "Today's activity is",
+  "caregiver_memory": "Caregiver Memory",
+  "manage_reminders": "Manage Reminders",
+  "reminders_desc": "Set simple daily reminders for the elder. Avoid medical instructions.",
+  "add_reminder": "Add Reminder",
+  "reminder_title": "Title",
+  "reminder_example": "e.g., Drink water",
+  "reminder_time": "Time",
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "save": "Save",
+  "no_reminders": "No reminders configured yet."
 }

@@ -21,26 +21,37 @@ export async function getDailyPlan(elderId: string): Promise<DailyPlan> {
   const profile = await db.culturalProfiles.where('elderId').equals(elderId).first();
 
   let culturalPromptId: string | undefined = undefined;
+  let memoryId: string | undefined = undefined;
 
-  // Filter content by preferred region and themes
-  let availableContent = ALL_CULTURAL_CONTENT;
-  if (profile) {
-    if (profile.region) {
-      availableContent = availableContent.filter(c => c.region === profile.region);
-    }
-    if (profile.preferredThemes && profile.preferredThemes.length > 0) {
-      const themedContent = availableContent.filter(c => profile.preferredThemes.includes(c.theme));
-      if (themedContent.length > 0) {
-        availableContent = themedContent;
+  const hash = todayDate.split('-').reduce((acc, part) => acc + parseInt(part, 10), 0);
+
+  // 1. Check for Memory Vault entries
+  const allMemories = await db.memories.where('elderId').equals(elderId).toArray();
+  const validMemories = allMemories.filter(m => m.title);
+  
+  if (validMemories.length > 0 && hash % 2 === 0) {
+    // 50% chance to prefer memory over general cultural prompt if memories exist
+    const index = hash % validMemories.length;
+    memoryId = validMemories[index].id;
+  } else {
+    // 2. Select cultural prompt
+    let availableContent = ALL_CULTURAL_CONTENT;
+    if (profile) {
+      if (profile.region) {
+        availableContent = availableContent.filter(c => c.region === profile.region);
+      }
+      if (profile.preferredThemes && profile.preferredThemes.length > 0) {
+        const themedContent = availableContent.filter(c => profile.preferredThemes.includes(c.theme));
+        if (themedContent.length > 0) {
+          availableContent = themedContent;
+        }
       }
     }
-  }
 
-  if (availableContent.length > 0) {
-    // Deterministic selection based on date string so it doesn't shift on reload
-    const hash = todayDate.split('-').reduce((acc, part) => acc + parseInt(part, 10), 0);
-    const index = hash % availableContent.length;
-    culturalPromptId = availableContent[index].id;
+    if (availableContent.length > 0) {
+      const index = hash % availableContent.length;
+      culturalPromptId = availableContent[index].id;
+    }
   }
 
   const newPlan: DailyPlan = {
@@ -49,6 +60,7 @@ export async function getDailyPlan(elderId: string): Promise<DailyPlan> {
     date: todayDate,
     activityId: recommendation.gameId,
     culturalPromptId,
+    memoryId,
     language: profile?.preferredLanguage || 'en',
     generatedLocally: true,
     completed: false,

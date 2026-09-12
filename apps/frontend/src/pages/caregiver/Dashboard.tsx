@@ -5,11 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import { MemoryVault } from './MemoryVault';
 import { PersonalizationInsights } from './PersonalizationInsights';
 import { CreateRelative } from './CreateRelative';
-import { Users, LogOut, Settings, Bell, BookOpen, Activity } from 'lucide-react';
+import { Users, LogOut, Settings, Bell, BookOpen, Activity, Clock } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useTranslation } from 'react-i18next';
 
 import { CulturalSettings } from './CulturalSettings';
+import { ManageReminders } from './ManageReminders';
 
 export function Dashboard() {
   const { clearAuth, currentCaregiverElder } = useAuthStore();
@@ -26,6 +27,7 @@ export function Dashboard() {
     { id: 'insights', label: 'Insights', icon: Activity },
     { id: 'relatives', label: 'Relatives', icon: Users },
     { id: 'memories', label: 'Memory Vault', icon: BookOpen },
+    { id: 'reminders', label: 'Reminders', icon: Clock },
     { id: 'settings', label: 'Settings', icon: Settings }
   ];
 
@@ -90,6 +92,7 @@ export function Dashboard() {
             {activeTab === 'relatives' && <CreateRelative />}
             {activeTab === 'memories' && <MemoryVault />}
             {activeTab === 'settings' && <CulturalSettings />}
+            {activeTab === 'reminders' && <ManageReminders />}
           </div>
         </div>
       )}
