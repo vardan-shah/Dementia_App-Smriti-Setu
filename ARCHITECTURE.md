@@ -37,3 +37,11 @@ Change Radar identifies persistent changes in an elder's activity-performance pa
   - `RECENT_WINDOW_SESSIONS = 5` (Evaluates the 5 most recent activities).
   - `PERSISTENCE_THRESHOLD = 3` (Requires 3+ deviations to establish a persistent change signal, avoiding knee-jerk alerts).
 - **Execution**: Runs exclusively locally against `db.performanceRecords` and `db.cognitiveBaselines`.
+
+## North-East Cultural Personalization (Phase 5)
+Provides an offline-first culturally tailored elder experience focusing natively on NER.
+- **Cultural Profile**: Caregiver-controlled. Avoids AI assumptions, allowing manual selection of region, language, and themes.
+- **Content Packs**: Bounded offline bundles containing highly curated, safe local trivia, memories, and prompts (e.g. `CULTURAL_PACK_ASSAM`). 
+- **Daily Assistance (`TodayPlan`)**: Generates deterministically each local day by merging a personalized cognitive activity recommendation with the culturally filtered prompts. Ensures stability on refresh.
+- **Reminders**: Elder-scoped local-only daily checklist without making clinical medical claims.
+- **Audio Interface**: Voice-first integration into the daily plan via existing `useGameAudio` (`speechSynthesis` fallback).

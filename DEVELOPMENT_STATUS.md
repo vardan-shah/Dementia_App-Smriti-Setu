@@ -1,36 +1,33 @@
 # Smriti Setu Development Status
 
 ## Current Phase
-Phase 4 — Cognitive Change Radar
+Phase 5 — North-East Cultural Personalization + Daily Assistance
 
 ## Status
 VERIFIED COMPLETE
 
-## Active Tasks (Phase 4)
-- [x] Change Signal Model (defined strictly-typed interfaces for persistence logic).
-- [x] Deviation Analysis & Persistence Logic (implemented configurable drop thresholds natively in frontend processing engine).
-- [x] Resolution Logic (signals revert to STABLE / RESOLVED when metrics recover).
-- [x] Caregiver UI (tabular summary with specific values, non-clinical verbiage).
-- [x] Offline Support (evaluates `performanceRecords` completely offline).
-- [x] Localization (En, Hi, Bn, As enabled).
-- [x] Testing & Validation (26 frontend tests asserting exact deviation logic, min sessions, and elder isolation boundaries).
+## Active Tasks (Phase 5)
+- [x] Cultural Profile (Caregiver can select region, language, themes).
+- [x] Cultural Content Packs (Created safe, bounded demo content for Assam).
+- [x] Daily Plan (Deterministic `TodayPlan` handles timezone resets gracefully).
+- [x] Reminders (Elder-scoped checkboxes for non-clinical daily guidance).
+- [x] Voice (Hooks into `useGameAudio` for "Hear Today's Plan").
+- [x] Offline (Content relies completely on local Dexie v9 structures).
+- [x] Localization (English, Hindi, Bengali, Assamese mapped for all new components).
+- [x] Caregiver Controls (Integrated `CulturalSettings` directly into Dashboard).
+- [x] Tests (Verified deterministic generation, timezone bounds, and elder isolation).
 
-## Completed (Phase 3.1)
-- **Personalization Hardening**: Data hierarchy strictly enforced (Source -> Normalized -> Derived).
-- **Game Metadata Registry**: Unified `config/games.ts` config.
-- **Offline Reliability**: Elder UX local-first optimization.
-- **Structured Recommendation Model**: Recency, performance, diversity.
-- **Strict Profile Definitions**: Reaction uses real metrics, Attention explicit `NOT_YET_MEASURED`.
-
-## Completed (Phases 0 - 3)
-- Foundation, Sync, Local DB, Authentication.
-- Object Recognition, Recall, Language Exercises.
-- Adaptive Difficulty heuristics & Personalization Engine baselines.
+## Completed (Phases 0 - 4.1)
+- **Change Radar**: Longitudinal performance deviation detection.
+- **Personalization**: Structured Activity Recommendations, Adaptive Difficulty.
+- **Offline / Sync**: Local-first Dexie architecture.
+- **Core Activities**: Object Recognition, Recall, Language Exercises, Memory Vault.
 
 ## Current Capability Profile
-- **Personalization Engine**: Computes bounded adaptive difficulty and highly structured multi-factor activity recommendations via Dexie `performanceRecords`.
-- **Cognitive Profile & Change Radar**: Identifies long-term performance deviations and presents findings purely as non-clinical caregiver insights.
-- **Offline Reliability**: Elder UX guarantees instant rendering and processing, driven exclusively by cached IndexedDB states.
+- **Personalization Engine**: Bounded adaptive difficulty and activity recommendations.
+- **Cognitive Profile & Change Radar**: Identifies longitudinal shifts natively.
+- **North-East Cultural UX**: Merges standard activity assignments with rich, culturally familiar trivia and local language (e.g., Assamese).
+- **Offline Reliability**: The entire suite (activities, settings, reminders, and daily assistance) caches natively and survives network disconnection seamlessly.
 
 ## Remaining Limitations
-- Push notification/background caregiver alerts for new Change Signals are deferred (requires advanced PWA background sync and remote delivery pipelines).
+- Push notification/background caregiver alerts for new Change Signals are deferred.

@@ -80,6 +80,9 @@ export class SmritiSetuDB extends Dexie {
   cognitiveBaselines!: EntityTable<CognitiveBaseline, 'id'>;
   performanceRecords!: EntityTable<PerformanceRecord, 'id'>;
   changeSignals!: EntityTable<import('../services/radar/types').ChangeSignal, 'id'>;
+  culturalProfiles!: EntityTable<import('../services/cultural/types').CulturalProfile, 'id'>;
+  dailyPlans!: EntityTable<import('../services/cultural/types').DailyPlan, 'id'>;
+  reminders!: EntityTable<import('../services/cultural/types').Reminder, 'id'>;
 
   constructor() {
     super('SmritiSetuDB');
@@ -131,6 +134,13 @@ export class SmritiSetuDB extends Dexie {
     // v8 Schema: Add changeSignals
     this.version(8).stores({
       changeSignals: 'id, elderId, category, status, severity, lastObservedAt',
+    });
+
+    // v9 Schema: North-East Cultural Personalization
+    this.version(9).stores({
+      culturalProfiles: 'id, elderId, region, preferredLanguage',
+      dailyPlans: 'id, elderId, date, [elderId+date]',
+      reminders: 'id, elderId, enabled',
     });
   }
 }

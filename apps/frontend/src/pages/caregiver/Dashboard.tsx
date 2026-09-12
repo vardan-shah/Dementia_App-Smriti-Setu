@@ -9,6 +9,8 @@ import { Users, LogOut, Settings, Bell, BookOpen, Activity } from 'lucide-react'
 import { useAuthStore } from '../../store/useAuthStore';
 import { useTranslation } from 'react-i18next';
 
+import { CulturalSettings } from './CulturalSettings';
+
 export function Dashboard() {
   const { clearAuth, currentCaregiverElder } = useAuthStore();
   const navigate = useNavigate();
@@ -23,7 +25,8 @@ export function Dashboard() {
   const tabs = [
     { id: 'insights', label: 'Insights', icon: Activity },
     { id: 'relatives', label: 'Relatives', icon: Users },
-    { id: 'memories', label: 'Memory Vault', icon: BookOpen }
+    { id: 'memories', label: 'Memory Vault', icon: BookOpen },
+    { id: 'settings', label: 'Settings', icon: Settings }
   ];
 
   const [activeTab, setActiveTab] = useState('insights');
@@ -86,6 +89,7 @@ export function Dashboard() {
             {activeTab === 'insights' && <PersonalizationInsights />}
             {activeTab === 'relatives' && <CreateRelative />}
             {activeTab === 'memories' && <MemoryVault />}
+            {activeTab === 'settings' && <CulturalSettings />}
           </div>
         </div>
       )}

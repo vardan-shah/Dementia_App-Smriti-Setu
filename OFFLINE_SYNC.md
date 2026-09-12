@@ -23,3 +23,6 @@ The recommendation engine and adaptive difficulty (`computeBaselines`, `recommen
 
 ### Change Radar offline capability
 The Cognitive Change Radar computes its `ChangeSignal`s exclusively from the `performanceRecords` and `cognitiveBaselines` local tables. This ensures that caregivers can instantly review longitudinal shifts in cognitive performance even when viewing the dashboard entirely offline, bypassing complex backend analytical services.
+
+### Daily Assistance and Cultural Personalization (Phase 5)
+The `TodayPlan` and caregiver `CulturalSettings` operate fundamentally on Dexie `v9` (`culturalProfiles`, `dailyPlans`, `reminders`). The curated cultural content packs are bundled directly or cached natively, allowing the elder dashboard to mount, load daily plans, process reminders, and launch filtered activities with zero network calls upon waking.
