@@ -3,7 +3,7 @@ import { supabase } from '../../supabase';
 import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { MemoryVault } from './MemoryVault';
-import { PersonalizationInsights } from './PersonalizationInsights';
+import { ElderOverview } from './ElderOverview';
 import { CreateRelative } from './CreateRelative';
 import { Users, LogOut, Settings, Bell, BookOpen, Activity, Clock } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -24,14 +24,14 @@ export function Dashboard() {
   };
 
   const tabs = [
-    { id: 'insights', label: 'Insights', icon: Activity },
+    { id: 'overview', label: 'Overview', icon: Activity },
     { id: 'relatives', label: 'Relatives', icon: Users },
     { id: 'memories', label: 'Memory Vault', icon: BookOpen },
     { id: 'reminders', label: 'Reminders', icon: Clock },
     { id: 'settings', label: 'Settings', icon: Settings }
   ];
 
-  const [activeTab, setActiveTab] = useState('insights');
+  const [activeTab, setActiveTab] = useState('overview');
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -88,7 +88,7 @@ export function Dashboard() {
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-[500px]">
-            {activeTab === 'insights' && <PersonalizationInsights />}
+            {activeTab === 'overview' && <ElderOverview setActiveTab={setActiveTab} />}
             {activeTab === 'relatives' && <CreateRelative />}
             {activeTab === 'memories' && <MemoryVault />}
             {activeTab === 'settings' && <CulturalSettings />}

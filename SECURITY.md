@@ -38,3 +38,7 @@ Elder permissions are further hardened at the PostgreSQL layer. Direct table `UP
 ## Phase 6.1 Enhancements
 - The AI provider boundary validates the caregiver's explicit `aiEnabled` preference on the server level, preventing accidental data egress.
 - AdaptiveDecision tables strictly separate the decision provenance from elder-facing UI, preventing unintentional disclosure of behavioral metrics to patients.
+
+## Phase 7: Caregiver Dashboard
+- **RLS Boundary**: The dashboard continues to strictly rely on the authenticated caregiver session mapping to `caregiver_elder_links`.
+- **Elder Profile Isolation**: Context switching dynamically routes all queries via the `elderId`, preventing local cross-contamination.

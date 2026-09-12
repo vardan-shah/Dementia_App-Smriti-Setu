@@ -30,7 +30,7 @@ Smriti Setu enforces a strict architectural boundary for core resource managemen
 - **Elder**: Operates via paired devices. Device authenticates using Supabase Anonymous sign-in, which the backend securely binds to an `elder_profiles` record via the `elder_devices` mapping table. Strict `elderId` scoping ensures zero cross-contamination of sessions, recommendations, or baselines on shared hardware.
 
 ## Cognitive Change Radar (Phase 4)
-Change Radar identifies persistent changes in an elder's activity-performance patterns relative to their own established baseline.
+Change Radar summarizes persistent activity-performance change relative to personal baseline.
 - **Role**: Longitudinal monitoring. Not a clinical diagnosis engine.
 - **Model (`ChangeSignal`)**: Evaluates memory, language, reaction, and engagement metrics natively.
 - **Configuration**:
@@ -65,3 +65,8 @@ The repository uses purely append-only schema evolution. A historical migration 
 - The contextual bandit algorithm is a lightweight, stochastic epsilon-greedy mechanism, not a heavy ML model.
 - `PerformanceRecords` are the absolute source of truth for all learning states. `AdaptiveDecision` is strictly used for logging and provenance.
 - Accuracy metrics strictly follow the canonical [0.0, 1.0] scale.
+
+## Phase 7: Caregiver Intelligence
+- **Unified Dashboard**: An end-to-end local-first overview tying together Adaptive Intelligence, Change Radar, and Cognitive Profile without exposing raw algorithms.
+- **Caregiver Insights**: Deterministic local fallback generator coupled with the optional AI text-summarization boundary.
+- **Progressive Disclosure**: Detailed config management (Memory Vault, Cultural Settings, Reminders) are deep-linked from the top-level Overview.

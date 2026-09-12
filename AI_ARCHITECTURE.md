@@ -31,3 +31,7 @@ The application attempts to use the configured provider (e.g., Gemini). If it fa
 - **No Clinical Interpretation**: The summarization provided by Groq/Gemini strictly offers encouraging engagement feedback, never diagnosis.
 - **Enforced Boundary**: The `aiEnabled` boolean is strictly evaluated on the Fastify backend; external API calls are physically impossible if opt-in is absent, regardless of configured secrets.
 - **Stochastic Behavior**: While the underlying heuristics and deterministic boundaries are fixed, the epsilon-greedy context bandit inherently produces stochastic exploration behaviors over time.
+
+## Phase 7: Caregiver Intelligence
+- **AI Summaries**: Strictly optional, opt-in boundary. Summarizes high-level engagement and difficulty trends without medical conclusions.
+- **Data Privacy**: Raw memories, family member names, or user photos are explicitly dropped and never transmitted to the external LLM.

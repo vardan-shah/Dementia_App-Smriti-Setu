@@ -36,3 +36,7 @@ Front-end generated entities natively adopt `crypto.randomUUID()` implementation
 
 ## Phase 6 Updates
 - Adaptive intelligence state (`adaptiveArmStates` and `adaptiveDecisions`) is fully derived from offline `performanceRecords`. If local data is lost, it can be deterministically rebuilt when synced back.
+
+## Phase 7: Local-First Caregiver Insights
+- The unified caregiver dashboard renders immediately from IndexedDB. 
+- Local determinism gracefully handles the absence of the AI provider or active network.
