@@ -7,6 +7,8 @@ import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useSettingsStore } from '../../../store/useSettingsStore';
+import { getRecommendedDifficulty, getDifficultyConfig } from '../../../services/adaptiveDifficulty';
+import type { DifficultyLevel } from '../../../services/adaptiveDifficulty';
 
 function shuffle<T>(array: T[]): T[] {
   const arr = [...array];
@@ -29,6 +31,7 @@ export function ObjectRecognition() {
   const [options, setOptions] = useState<string[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [difficulty, setDifficulty] = useState<DifficultyLevel>('MEDIUM');
   
   // Real Telemetry tracking
   const sessionStartTimeRef = useRef(Date.now());
@@ -48,6 +51,9 @@ export function ObjectRecognition() {
         // Use photoLocal or photoUrl
         const withPhotos = stored.filter(r => r.photoLocal || r.photoUrl);
         setRelatives(shuffle(withPhotos));
+        
+        const recDifficulty = await getRecommendedDifficulty(elderId, 'object-recognition');
+        setDifficulty(recDifficulty);
       } catch (err) {
         console.error(err);
       } finally {
@@ -63,12 +69,8 @@ export function ObjectRecognition() {
     if (currentRelative && relatives.length > 0) {
       questionStartTimeRef.current = Date.now();
       
-      // Determine difficulty options (Easy=2, Medium=3, Hard=4)
-      let numOptions = 3; 
-      // If we had adaptiveDifficulty stored, we'd use it here. E.g.
-      // if (settings.difficulty === 'EASY') numOptions = 2;
-      // For now, let's just make it standard 3, or check if we can simulate adaptive
-      numOptions = Math.min(3, relatives.length);
+      const config = getDifficultyConfig('object-recognition', difficulty);
+      const numOptions = Math.min(config.choices, relatives.length);
 
       const correctAnswer = currentRelative.name;
       const pool = relatives.filter(r => r.id !== currentRelative.id).map(r => r.name);
@@ -119,11 +121,19 @@ export function ObjectRecognition() {
     const sessionId = crypto.randomUUID();
     const completedAt = Date.now();
     
+    const totalAnswers = metrics.correct + metrics.errors;
+    const errorRate = totalAnswers > 0 ? metrics.errors / totalAnswers : 0;
+    
     const finalMetrics = {
       ...metrics,
-      avgReactionTimeMs: metrics.correct + metrics.errors > 0 
-        ? Math.round(metrics.totalReactionTimeMs / (metrics.correct + metrics.errors)) 
-        : 0
+      avgReactionTimeMs: totalAnswers > 0 
+        ? Math.round(metrics.totalReactionTimeMs / totalAnswers) 
+        : 0,
+      errorRate,
+      timeOfDay: new Date().getHours(),
+      gameSpecificMetrics: {
+        difficulty
+      }
     };
 
     const session = {

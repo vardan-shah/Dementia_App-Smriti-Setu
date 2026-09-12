@@ -31,23 +31,14 @@ PHASE 1 — VERIFIED COMPLETE
 - RLS enforced: YES
 - Caregiver creates elder workflow: SUCCESS
 
+## Current Phase
+Phase 2 — Memory-to-Game
+
+## Status
+P0 VERIFIED COMPLETE
+
 ## Next Phase
-Phase 2.0.1 — P0 Hardening & Defect Remediation Complete
+Phase 2 P1 — Recall + Language Exercises
 
-## Phase 2: Memory-to-Game Foundation
-**Status**: PHASE 2.0.1 — P0 HARDENING VERIFIED COMPLETE
-
-### Completed (P0 Hardened)
-- **Local-First Memory Vault**: Caregiver UI fully decoupled from network availability. Read/Write directly to IndexedDB first (`useLiveQuery`). Background fetch updates gracefully.
-- **Stories**: Created Caregiver `CreateStory.tsx` to handle title, text, and relative linking. Stories are completely offline-capable and sync properly.
-- **Offline Writes**: Extracted API push out of the critical flow. `RELATIVE_CREATED` and `STORY_CREATED` events push securely into the `SyncEvents` table.
-- **Object Recognition Game (P0)**: Hardened real gameplay. Uses Elder scope (`elderId`) to prevent data leakage between patients sharing a device.
-- **Telemetry**: Tracks actual `questionStartTime` to accurately trace `totalReactionTimeMs` and calculates `avgReactionTimeMs`, recording exactly how many options were presented dynamically, solving the hard-coded mock data defect.
-- **Database Architecture**: `SmritiSetuDB` migrated to v4 locally adding `memoryStories`. API backend refactored to consume dynamically generated `userClient` bounded to JWT, ensuring all PostgreSQL Row Level Security (RLS) protections natively secure inserts without redundant service-role interventions. 
-- **Localization**: Eliminated all hardcoded strings. Hindi, Assamese, Bengali, and English completely integrated for the Game and Vault features.
-
-### Remaining (Phase 2 P1/P2)
-- Recall Game (P1)
-- Language Exercises (P1)
-- Automatic content generation pipeline (P2)
+### Prototype limitation / future integration
 - Supabase Storage media upload integration for photo/voice files (currently uses Local blob/base64 cache for Offline operation).
