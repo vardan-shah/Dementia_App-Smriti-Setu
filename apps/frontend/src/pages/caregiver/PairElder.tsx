@@ -1,3 +1,4 @@
+import { API_URL } from "../../config/env";
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabase';
@@ -11,7 +12,7 @@ export function PairElder() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  
 
   const generateCode = async () => {
     setLoading(true);

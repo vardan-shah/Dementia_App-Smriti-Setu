@@ -1,8 +1,9 @@
+import { API_URL } from "../config/env";
 import { db } from '../db';
 import { supabase } from '../supabase';
 
 export class SyncManager {
-  private syncUrl = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/sync` : 'http://localhost:3000/sync';
+  private syncUrl = `${API_URL}/sync`;
   private isSyncing = false;
 
   async enqueueEvent(type: string, payload: any, entity?: string) {

@@ -1,3 +1,4 @@
+import { API_URL } from "../../config/env";
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabase';
@@ -12,7 +13,7 @@ export function Pairing() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  
 
   const handlePairing = async (e: React.FormEvent) => {
     e.preventDefault();

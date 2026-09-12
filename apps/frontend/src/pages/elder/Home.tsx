@@ -1,3 +1,4 @@
+import { API_URL } from "../../config/env";
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../supabase';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -36,7 +37,7 @@ export function Home() {
 
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) return;
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      
       try {
         const response = await fetch(`${API_URL}/elders/${elderId}`, {
           headers: { 'Authorization': `Bearer ${sessionData.session.access_token}` }

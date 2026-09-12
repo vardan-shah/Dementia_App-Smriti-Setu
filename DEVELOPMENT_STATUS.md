@@ -4,7 +4,7 @@
 Phase 8 — Production Readiness + Real-World Validation
 
 ## Status
-VERIFIED COMPLETE
+PARTIALLY VERIFIED
 
 ## Completed (Phases 0 - 6)
 - **Advanced Adaptive Intelligence**: Epsilon-greedy Contextual Bandit for difficulty tuning. Multi-factor Activity Recommendation (diversity, performance, engagement, cultural).
@@ -48,3 +48,14 @@ VERIFIED COMPLETE
 - [x] AI
 - [x] performance
 - [x] demo flow
+
+## Phase 8.1 Tracking
+- [x] environment
+- [x] production builds
+- [x] security source audit
+- [x] PWA generation
+- [ ] PWA installation on physical device
+- [ ] real offline test
+- [ ] physical Android test
+- [ ] live Supabase deployment
+- [ ] live RLS verification

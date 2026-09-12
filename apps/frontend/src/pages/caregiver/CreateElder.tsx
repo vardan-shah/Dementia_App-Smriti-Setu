@@ -1,3 +1,4 @@
+import { API_URL } from "../../config/env";
 import React, { useState } from 'react';
 import { supabase } from '../../supabase';
 import { Card } from '../../components/ui/Card';
@@ -11,7 +12,7 @@ export function CreateElder() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
