@@ -32,7 +32,7 @@ DECLARE
     new_relative_id UUID;
 BEGIN
     FOR rec IN 
-        SELECT mp.id as mp_id, mp.memory_id, mp.name, mp.relationship, m.elder_id 
+        SELECT mp.id as mp_id, mp.memory_id, mp.name, COALESCE(mp.relation_to_elder, 'Unknown') as relationship, m.elder_id 
         FROM public.memory_people mp 
         JOIN public.memories m ON m.id = mp.memory_id
     LOOP
