@@ -49,7 +49,7 @@ CREATE TRIGGER update_caregiver_profiles_modtime BEFORE UPDATE ON public.caregiv
 
 -- Link Elders and Caregivers
 CREATE TABLE public.caregiver_elder_links (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     caregiver_id UUID REFERENCES public.caregiver_profiles(id) ON DELETE CASCADE,
     elder_id UUID REFERENCES public.elder_profiles(id) ON DELETE CASCADE,
     relationship TEXT,
@@ -59,7 +59,7 @@ CREATE TABLE public.caregiver_elder_links (
 
 -- Memories (For Memory-to-Game)
 CREATE TABLE public.memories (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     elder_id UUID REFERENCES public.elder_profiles(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     description TEXT,
@@ -72,7 +72,7 @@ CREATE TABLE public.memories (
 CREATE TRIGGER update_memories_modtime BEFORE UPDATE ON public.memories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TABLE public.memory_media (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     memory_id UUID REFERENCES public.memories(id) ON DELETE CASCADE,
     media_url TEXT NOT NULL,
     media_type TEXT CHECK (media_type IN ('IMAGE', 'AUDIO', 'VIDEO')),
@@ -81,7 +81,7 @@ CREATE TABLE public.memory_media (
 );
 
 CREATE TABLE public.memory_people (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     memory_id UUID REFERENCES public.memories(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     relation_to_elder TEXT,
@@ -90,7 +90,7 @@ CREATE TABLE public.memory_people (
 
 -- Game Architecture
 CREATE TABLE public.game_templates (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     name TEXT NOT NULL,
     description TEXT,
     cognitive_domain TEXT, -- e.g., 'MEMORY', 'ATTENTION'
@@ -98,7 +98,7 @@ CREATE TABLE public.game_templates (
 );
 
 CREATE TABLE public.games (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     template_id UUID REFERENCES public.game_templates(id),
     elder_id UUID REFERENCES public.elder_profiles(id) ON DELETE CASCADE,
     is_personalized BOOLEAN DEFAULT false,
@@ -107,7 +107,7 @@ CREATE TABLE public.games (
 );
 
 CREATE TABLE public.game_questions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     game_id UUID REFERENCES public.games(id) ON DELETE CASCADE,
     memory_id UUID REFERENCES public.memories(id) ON DELETE SET NULL, -- optional link
     question_text TEXT NOT NULL,
@@ -118,7 +118,7 @@ CREATE TABLE public.game_questions (
 
 -- Sessions & Performance
 CREATE TABLE public.game_sessions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     game_id UUID REFERENCES public.games(id) ON DELETE CASCADE,
     elder_id UUID REFERENCES public.elder_profiles(id) ON DELETE CASCADE,
     started_at TIMESTAMPTZ DEFAULT NOW(),
@@ -127,7 +127,7 @@ CREATE TABLE public.game_sessions (
 );
 
 CREATE TABLE public.game_attempts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     session_id UUID REFERENCES public.game_sessions(id) ON DELETE CASCADE,
     question_id UUID REFERENCES public.game_questions(id) ON DELETE CASCADE,
     selected_answer TEXT,
@@ -137,7 +137,7 @@ CREATE TABLE public.game_attempts (
 );
 
 CREATE TABLE public.performance_metrics (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     session_id UUID REFERENCES public.game_sessions(id) ON DELETE CASCADE,
     elder_id UUID REFERENCES public.elder_profiles(id) ON DELETE CASCADE,
     accuracy_percentage NUMERIC,
@@ -156,7 +156,7 @@ CREATE TABLE public.cognitive_profiles (
 CREATE TRIGGER update_cognitive_profiles_modtime BEFORE UPDATE ON public.cognitive_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TABLE public.baseline_snapshots (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     elder_id UUID REFERENCES public.elder_profiles(id) ON DELETE CASCADE,
     snapshot_date DATE NOT NULL,
     metrics JSONB NOT NULL,
@@ -164,7 +164,7 @@ CREATE TABLE public.baseline_snapshots (
 );
 
 CREATE TABLE public.change_alerts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     elder_id UUID REFERENCES public.elder_profiles(id) ON DELETE CASCADE,
     alert_type TEXT,
     description TEXT,
@@ -175,7 +175,7 @@ CREATE TABLE public.change_alerts (
 
 -- Utilities
 CREATE TABLE public.reminders (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     elder_id UUID REFERENCES public.elder_profiles(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     description TEXT,
@@ -186,7 +186,7 @@ CREATE TABLE public.reminders (
 );
 
 CREATE TABLE public.sync_events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
     event_type TEXT NOT NULL,
     payload JSONB NOT NULL,
@@ -196,7 +196,7 @@ CREATE TABLE public.sync_events (
 );
 
 CREATE TABLE public.notifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     body TEXT,
@@ -205,7 +205,7 @@ CREATE TABLE public.notifications (
 );
 
 CREATE TABLE public.audit_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     user_id UUID REFERENCES public.users(id),
     action TEXT NOT NULL,
     entity_type TEXT,

@@ -2,7 +2,7 @@
 
 -- 1. Cultural Profiles (New Domain Table)
 CREATE TABLE IF NOT EXISTS public.cultural_profiles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     elder_id UUID NOT NULL REFERENCES public.elder_profiles(id) ON DELETE CASCADE,
     region TEXT NOT NULL,
     preferred_language TEXT NOT NULL,

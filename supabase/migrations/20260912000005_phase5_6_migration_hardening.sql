@@ -7,7 +7,7 @@ BEGIN
     -- Ensure table exists
     IF NOT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'cultural_profiles') THEN
         CREATE TABLE public.cultural_profiles (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
             elder_id UUID NOT NULL,
             region TEXT NOT NULL,
             preferred_language TEXT NOT NULL,

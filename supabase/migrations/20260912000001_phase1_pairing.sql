@@ -6,7 +6,7 @@ ALTER TABLE public.elder_profiles DROP CONSTRAINT elder_profiles_id_fkey;
 
 -- 2. Create pairing_codes table
 CREATE TABLE public.pairing_codes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     code TEXT UNIQUE NOT NULL,
     elder_id UUID REFERENCES public.elder_profiles(id) ON DELETE CASCADE,
     created_by UUID REFERENCES public.users(id) ON DELETE CASCADE,

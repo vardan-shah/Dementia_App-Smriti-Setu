@@ -2,7 +2,7 @@
 
 -- 1. Create Relatives table
 CREATE TABLE public.relatives (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
     elder_id UUID REFERENCES public.elder_profiles(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     relationship TEXT NOT NULL,
@@ -38,7 +38,7 @@ BEGIN
         FROM public.memory_people mp 
         JOIN public.memories m ON m.id = mp.memory_id
     LOOP
-        new_relative_id := uuid_generate_v4();
+        new_relative_id := extensions.uuid_generate_v4();
         
         INSERT INTO public.relatives (id, elder_id, name, relationship, created_at, updated_at)
         VALUES (new_relative_id, rec.elder_id, rec.name, rec.relationship, NOW(), NOW());
