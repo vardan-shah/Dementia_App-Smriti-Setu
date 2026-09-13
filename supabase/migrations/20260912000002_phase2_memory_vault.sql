@@ -21,10 +21,8 @@ ALTER TABLE public.memories
 ADD COLUMN relative_id UUID REFERENCES public.relatives(id) ON DELETE SET NULL,
 ADD COLUMN photo_url TEXT,
 ADD COLUMN voice_url TEXT,
-ADD COLUMN created_by UUID REFERENCES public.users(id),
-ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
+;
 
-CREATE TRIGGER update_memories_modtime BEFORE UPDATE ON public.memories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Migrate existing memory_people to relatives, and link memories if applicable
 -- For prototype phase, this safely moves the data concept without data loss
