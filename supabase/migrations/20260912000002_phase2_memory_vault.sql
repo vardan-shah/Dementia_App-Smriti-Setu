@@ -20,7 +20,7 @@ CREATE TRIGGER update_relatives_modtime BEFORE UPDATE ON public.relatives FOR EA
 ALTER TABLE public.memories
 ADD COLUMN relative_id UUID REFERENCES public.relatives(id) ON DELETE SET NULL,
 ADD COLUMN photo_url TEXT,
-ADD COLUMN voice_url TEXT,
+ADD COLUMN voice_url TEXT
 ;
 
 
