@@ -7,17 +7,20 @@ import { Button } from '../../components/ui/Button';
 
 export function Notifications() {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
+  const { caregiverId } = useAuthStore();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchNotifications = async () => {
-    if (!user) return;
+    const { data: session } = await supabase.auth.getSession();
+    if (!session?.session?.user) return;
+    const uid = session.session.user.id;
+
     setLoading(true);
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', uid)
       .order('created_at', { ascending: false });
     
     if (!error && data) setNotifications(data);
@@ -31,7 +34,7 @@ export function Notifications() {
 
   useEffect(() => {
     fetchNotifications();
-  }, [user]);
+  }, [caregiverId]);
 
   return (
     <div className="space-y-6">
