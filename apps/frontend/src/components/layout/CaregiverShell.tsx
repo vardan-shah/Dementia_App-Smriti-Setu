@@ -18,14 +18,15 @@ export function CaregiverShell() {
     async function fetchElders() {
       if (!caregiverId) return;
       const { data } = await supabase
-        .from('elders')
-        .select('*')
+        .from('caregiver_elder_links')
+        .select('elder_profiles(*)')
         .eq('caregiver_id', caregiverId);
       
       if (data) {
-        setElders(data);
-        if (data.length > 0 && !currentCaregiverElder) {
-          setCurrentCaregiverElder(data[0]);
+        const mappedElders = data.map((d: any) => d.elder_profiles).filter(Boolean);
+        setElders(mappedElders);
+        if (mappedElders.length > 0 && !currentCaregiverElder) {
+          setCurrentCaregiverElder(mappedElders[0]);
         }
       }
     }
