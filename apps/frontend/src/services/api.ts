@@ -1,63 +1,49 @@
 import { supabase } from '../supabase';
-
 import { API_URL } from "../config/env";
 
-async function getAuthHeader() {
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData.session) throw new Error('Not authenticated');
-  return { 'Authorization': `Bearer ${sessionData.session.access_token}` };
-}
-
 export async function fetchRelatives(elderId: string) {
-  const headers = await getAuthHeader();
-  const res = await fetch(`${API_URL}/v1/relatives?elderId=${elderId}`, { headers });
-  if (!res.ok) throw new Error('Failed to fetch relatives');
-  return res.json();
+  const { data, error } = await supabase.from('relatives').select('*').eq('elder_id', elderId);
+  if (error) throw new Error('Failed to fetch relatives');
+  return data;
 }
 
 export async function createRelative(data: { elderId: string, name: string, relationship: string, photoUrl?: string }) {
-  const headers = await getAuthHeader();
-  const res = await fetch(`${API_URL}/v1/relatives`, {
-    method: 'POST',
-    headers: {
-      ...headers,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) throw new Error('Failed to create relative');
-  return res.json();
+  const { data: newRel, error } = await supabase.from('relatives').insert({
+    elder_id: data.elderId,
+    name: data.name,
+    relationship: data.relationship,
+    photo_url: data.photoUrl
+  }).select().single();
+  if (error) throw new Error('Failed to create relative');
+  return newRel;
 }
 
 export async function fetchStories(elderId: string) {
-  const headers = await getAuthHeader();
-  const res = await fetch(`${API_URL}/v1/stories?elderId=${elderId}`, { headers });
-  if (!res.ok) throw new Error('Failed to fetch stories');
-  return res.json();
+  const { data, error } = await supabase.from('stories').select('*').eq('elder_id', elderId);
+  if (error) throw new Error('Failed to fetch stories');
+  return data;
 }
 
 export async function createStory(data: { elderId: string, title: string, description?: string, relativeId?: string, photoUrl?: string }) {
-  const headers = await getAuthHeader();
-  const res = await fetch(`${API_URL}/v1/stories`, {
-    method: 'POST',
-    headers: {
-      ...headers,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) throw new Error('Failed to create story');
-  return res.json();
+  const { data: newStory, error } = await supabase.from('stories').insert({
+    elder_id: data.elderId,
+    title: data.title,
+    description: data.description,
+    relative_id: data.relativeId,
+    photo_url: data.photoUrl
+  }).select().single();
+  if (error) throw new Error('Failed to create story');
+  return newStory;
 }
 
 export async function generateAiSummary(payload: { elderId: string, recentActivities: any[], aiEnabled: boolean }) {
-  const headers = await getAuthHeader().catch(() => ({})); // fallback if not authenticated
+  if (!payload.aiEnabled) return { summary: '' };
+  const { data: sessionData } = await supabase.auth.getSession();
+  const headers = sessionData.session ? { 'Authorization': `Bearer ${sessionData.session.access_token}` } : {};
+  
   const res = await fetch(`${API_URL}/api/ai/summarize`, {
     method: 'POST',
-    headers: {
-      ...headers,
-      'Content-Type': 'application/json'
-    },
+    headers: { ...headers, 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
   if (!res.ok) throw new Error('Failed to generate AI summary');
