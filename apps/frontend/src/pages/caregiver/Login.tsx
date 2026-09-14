@@ -25,7 +25,11 @@ export function Login() {
     });
 
     if (error) {
-      setError(error.message);
+      if (error.message === 'Failed to fetch') {
+        setError('Network error: Unable to reach authentication server. Please check CORS (Site URL) settings in Supabase Dashboard.');
+      } else {
+        setError(error.message);
+      }
       setLoading(false);
       return;
     }
