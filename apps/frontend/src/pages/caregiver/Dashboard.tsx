@@ -20,7 +20,7 @@ export function Dashboard() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     clearAuth();
-    navigate('/login');
+    navigate('/');
   };
 
   const tabs = [
@@ -63,7 +63,10 @@ export function Dashboard() {
       {!currentCaregiverElder ? (
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-6 rounded-xl">
           <h3 className="text-lg font-bold mb-2">{t('no_elder_selected', 'No Elder Selected')}</h3>
-          <p>{t('please_select_elder_sidebar', 'Please select or create an elder profile from the sidebar to manage their content.')}</p>
+          <p className="mb-4">{t('please_select_elder_sidebar', 'Please select or create an elder profile from the sidebar to manage their content.')}</p>
+          <Button onClick={() => navigate('/caregiver/create-elder')} variant="primary">
+            Create Elder Profile
+          </Button>
         </div>
       ) : (
         <div className="space-y-6">

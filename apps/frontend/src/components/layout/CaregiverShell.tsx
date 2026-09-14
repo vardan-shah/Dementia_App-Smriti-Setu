@@ -1,16 +1,36 @@
-import React from 'react';
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { supabase } from '../../supabase';
-import { Home, Users, Settings, LogOut } from 'lucide-react';
+import { Home, Users, Settings, LogOut, PlusCircle, UserCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { OfflineIndicator } from '../ui/OfflineIndicator';
 import { LanguageSelector } from '../ui/LanguageSelector';
 
 export function CaregiverShell() {
   const navigate = useNavigate();
-  const { clearAuth } = useAuthStore();
+  const location = useLocation();
+  const { caregiverId, currentCaregiverElder, setCurrentCaregiverElder, clearAuth } = useAuthStore();
   const { t } = useTranslation();
+  const [elders, setElders] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchElders() {
+      if (!caregiverId) return;
+      const { data } = await supabase
+        .from('elders')
+        .select('*')
+        .eq('caregiver_id', caregiverId);
+      
+      if (data) {
+        setElders(data);
+        if (data.length > 0 && !currentCaregiverElder) {
+          setCurrentCaregiverElder(data[0]);
+        }
+      }
+    }
+    fetchElders();
+  }, [caregiverId, currentCaregiverElder, setCurrentCaregiverElder]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -31,18 +51,43 @@ export function CaregiverShell() {
         </div>
         
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          <Link to="/caregiver" className="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+          <Link to="/caregiver" className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname === '/caregiver' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}`}>
             <Home size={20} />
             <span className="font-medium">Dashboard</span>
           </Link>
-          <div className="pt-4 pb-2">
-            <p className="px-4 text-xs font-semibold text-gray-400 uppercase">Manage</p>
+
+          <div className="pt-4 pb-2 flex items-center justify-between px-4">
+            <p className="text-xs font-semibold text-gray-400 uppercase">My Elders</p>
+            <Link to="/caregiver/create-elder" className="text-blue-600 hover:text-blue-800" title="Add Elder">
+              <PlusCircle size={16} />
+            </Link>
           </div>
-          <Link to="/caregiver/elders" className="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-            <Users size={20} />
-            <span className="font-medium">Elders</span>
-          </Link>
-          {/* Placeholders for future phases */}
+
+          {elders.map(elder => (
+            <button
+              key={elder.id}
+              onClick={() => {
+                setCurrentCaregiverElder(elder);
+                navigate('/caregiver');
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                currentCaregiverElder?.id === elder.id 
+                  ? 'bg-blue-50 text-blue-700 font-medium' 
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <UserCircle size={20} />
+              <span className="font-medium truncate">{elder.full_name}</span>
+            </button>
+          ))}
+
+          {elders.length === 0 && (
+            <p className="px-4 py-2 text-sm text-gray-400 italic">No elders added yet.</p>
+          )}
+
+          <div className="pt-4 pb-2">
+            <p className="px-4 text-xs font-semibold text-gray-400 uppercase">System</p>
+          </div>
           <button disabled className="w-full opacity-50 flex items-center gap-3 px-4 py-3 text-gray-700 rounded-lg text-left cursor-not-allowed">
             <Settings size={20} />
             <span className="font-medium">Analytics (Coming Soon)</span>
