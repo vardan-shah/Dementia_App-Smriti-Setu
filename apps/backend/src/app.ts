@@ -14,12 +14,10 @@ export async function buildApp() {
 
   await app.register(helmet);
   await app.register(cors, {
-    origin: process.env.NODE_ENV === 'production' 
-      ? [
-          'https://dementia-app-smriti-setu-frontend.vercel.app',
-          ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(u => u.trim().replace(/\/$/, '')) : [])
-        ]
-      : true,
+    origin: (origin, cb) => {
+      // Always allow the origin to ensure CORS works behind edge networks/proxies
+      cb(null, origin || true);
+    },
     credentials: true
   });
 
