@@ -21,19 +21,10 @@ export function PairElder() {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) throw new Error('Not authenticated');
 
-      const response = await fetch(`${API_URL}/elders/${id}/pairing`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${sessionData.session.access_token}`
-        }
+      const { data, error } = await supabase.rpc('generate_pairing_code', {
+        p_elder_id: id
       });
-      
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || t('failed_to_generate_code', 'Failed to generate code'));
-      }
-
-      const data = await response.json();
+      if (error) throw new Error(error.message);
       setCode(data.code);
     } catch (err: any) {
       setError(err.message);

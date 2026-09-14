@@ -22,18 +22,15 @@ export function Pairing() {
 
     try {
       // 1. Call backend to verify pairing code and provision a device identity
-      const response = await fetch(`${API_URL}/elder/pair`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code })
+      const { data: resData, error: rpcError } = await supabase.rpc('pair_device_with_code', {
+        p_code: code
       });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Failed to pair');
+      
+      if (rpcError) {
+        throw new Error(rpcError.message || 'Failed to pair');
       }
-
-      const { elderId, credentials } = await response.json();
+      
+      const { elderId, credentials } = resData;
       
       // 2. Sign in with the securely provisioned device identity
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
