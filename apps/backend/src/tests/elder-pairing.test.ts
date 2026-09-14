@@ -15,7 +15,14 @@ vi.mock('@supabase/supabase-js', () => {
       getUser: vi.fn().mockResolvedValue({
         data: { user: { id: 'test-caregiver-id' } },
         error: null
-      })
+      }),
+      admin: {
+        createUser: vi.fn().mockResolvedValue({
+          data: { user: { id: 'test-device-uuid' } },
+          error: null
+        }),
+        deleteUser: vi.fn().mockResolvedValue({ data: null, error: null })
+      }
     }
   };
   return { createClient: vi.fn(() => mSupabase) };

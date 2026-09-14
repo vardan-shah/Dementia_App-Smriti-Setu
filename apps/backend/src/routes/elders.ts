@@ -189,7 +189,7 @@ export async function elderRoutes(app: FastifyInstance) {
   // POST /elder/pair
   app.post('/elder/pair', async (request, reply) => {
     try {
-      const { code, deviceUid } = pairElderSchema.parse(request.body);
+      const { code } = pairElderSchema.parse(request.body);
       
       const { data: codeData, error: codeError } = await supabaseService
         .from('pairing_codes')
@@ -205,6 +205,24 @@ export async function elderRoutes(app: FastifyInstance) {
         return reply.status(400).send({ error: 'Expired pairing code' });
       }
 
+      // Generate a secure device user via admin API to bypass sign-up limits and anonymous disabled issues
+      const deviceEmail = `elder-device-${Date.now()}-${Math.random().toString(36).substring(7)}@smriti-setu.local`;
+      const devicePassword = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+        .map(b => b.toString(16).padStart(2, '0')).join('') + 'A1!'; // strong password
+
+      const { data: authData, error: authError } = await supabaseService.auth.admin.createUser({
+        email: deviceEmail,
+        password: devicePassword,
+        email_confirm: true
+      });
+
+      if (authError || !authData.user) {
+        app.log.error(authError);
+        return reply.status(500).send({ error: 'Failed to provision device identity' });
+      }
+
+      const deviceUid = authData.user.id;
+
       const { error: linkError } = await supabaseService.from('elder_devices').insert({
         id: deviceUid,
         elder_id: codeData.elder_id
@@ -212,18 +230,26 @@ export async function elderRoutes(app: FastifyInstance) {
 
       if (linkError) {
         app.log.error(linkError);
+        await supabaseService.auth.admin.deleteUser(deviceUid); // rollback
         return reply.status(500).send({ error: 'Failed to pair device' });
       }
       
       await supabaseService.from('users').upsert({
         id: deviceUid,
-        email: `elder-${deviceUid}@smriti-setu.local`, // Dummy email
+        email: deviceEmail,
         role: 'ELDER'
       });
 
       await supabaseService.from('pairing_codes').delete().eq('id', codeData.id);
 
-      return { status: 'paired', elderId: codeData.elder_id };
+      return { 
+        status: 'paired', 
+        elderId: codeData.elder_id,
+        credentials: {
+          email: deviceEmail,
+          password: devicePassword
+        }
+      };
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({ error: 'Validation failed', details: (error as any).errors });

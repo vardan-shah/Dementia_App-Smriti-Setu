@@ -12,6 +12,8 @@ import { useTranslation } from 'react-i18next';
 import { CulturalSettings } from './CulturalSettings';
 import { ManageReminders } from './ManageReminders';
 
+import { Notifications } from './Notifications';
+
 export function Dashboard() {
   const { clearAuth, currentCaregiverElder } = useAuthStore();
   const navigate = useNavigate();
@@ -28,6 +30,7 @@ export function Dashboard() {
     { id: 'relatives', label: t('relatives', 'Relatives'), icon: Users },
     { id: 'memories', label: t('memory_vault', 'Memory Vault'), icon: BookOpen },
     { id: 'reminders', label: t('reminders', 'Reminders'), icon: Clock },
+    { id: 'notifications', label: t('notifications', 'Notifications'), icon: Bell },
     { id: 'settings', label: t('settings', 'Settings'), icon: Settings }
   ];
 
@@ -45,14 +48,18 @@ export function Dashboard() {
           )}
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="hidden md:flex">
-            <Bell className="w-4 h-4 mr-2" />
-            {t('notifications', 'Notifications')}
-          </Button>
-          <Button variant="outline" className="hidden md:flex">
-            <Settings className="w-4 h-4 mr-2" />
-            {t('settings', 'Settings')}
-          </Button>
+          {currentCaregiverElder && (
+            <>
+              <Button variant="outline" className="hidden md:flex" onClick={() => setActiveTab('notifications')}>
+                <Bell className="w-4 h-4 mr-2" />
+                {t('notifications', 'Notifications')}
+              </Button>
+              <Button variant="outline" className="hidden md:flex" onClick={() => setActiveTab('settings')}>
+                <Settings className="w-4 h-4 mr-2" />
+                {t('settings', 'Settings')}
+              </Button>
+            </>
+          )}
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="w-4 h-4 mr-2" />
             {t('sign_out', 'Sign Out')}
@@ -94,6 +101,7 @@ export function Dashboard() {
             {activeTab === 'overview' && <ElderOverview setActiveTab={setActiveTab} />}
             {activeTab === 'relatives' && <CreateRelative />}
             {activeTab === 'memories' && <MemoryVault />}
+            {activeTab === 'notifications' && <Notifications />}
             {activeTab === 'settings' && <CulturalSettings />}
             {activeTab === 'reminders' && <ManageReminders />}
           </div>

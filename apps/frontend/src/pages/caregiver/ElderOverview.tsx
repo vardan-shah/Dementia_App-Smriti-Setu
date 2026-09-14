@@ -16,6 +16,8 @@ import { generateCaregiverInsights } from '../../services/insights';
 import { generateAiSummary } from '../../services/api';
 import { getReminders } from '../../services/cultural/reminders';
 import { getLocalDateKey } from '../../utils/date';
+import { useNavigate } from 'react-router-dom';
+
 const CATEGORY_ICONS: Record<string, any> = {
   'Memory': Brain,
   'Attention': Target,
@@ -28,6 +30,7 @@ export function ElderOverview({ setActiveTab }: { setActiveTab?: (tab: string) =
   const { currentCaregiverElder } = useAuthStore();
   const elderId = currentCaregiverElder?.id;
   const { t } = useTranslation();
+  const navigate = useNavigate();
   
   const [profile, setProfile] = useState<CognitiveProfile | null>(null);
   const [recommendation, setRecommendation] = useState<ActivityRecommendation | null>(null);
@@ -139,11 +142,18 @@ export function ElderOverview({ setActiveTab }: { setActiveTab?: (tab: string) =
               {recentSessions.length > 0 ? new Date(recentSessions[0].createdAt).toLocaleString() : 'Never'}
             </span></p>
           </div>
-          {setActiveTab && (
-             <Button variant="outline" className="w-full mt-4" onClick={() => setActiveTab('settings')}>
-               {t('edit_cultural_settings', 'Edit Settings')}
-             </Button>
-          )}
+          <div className="flex gap-3 mt-4">
+            {setActiveTab && (
+              <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/caregiver/elders/${currentCaregiverElder.id}/pair`)}>
+                {t('pair_device', 'Pair Device')}
+              </Button>
+            )}
+            {setActiveTab && (
+              <Button variant="outline" size="sm" className="flex-1" onClick={() => setActiveTab('settings')}>
+                {t('edit_cultural_settings', 'Edit Settings')}
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="lg:col-span-2 bg-blue-50 rounded-xl shadow-sm border border-blue-100 p-6 flex flex-col justify-between">

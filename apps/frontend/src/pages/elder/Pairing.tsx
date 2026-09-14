@@ -21,17 +21,11 @@ export function Pairing() {
     setError('');
 
     try {
-      // 1. Sign in anonymously to get a device auth.uid()
-      const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
-      if (authError || !authData.user) {
-        throw new Error('Could not secure a device session.');
-      }
-
-      // 2. Call backend to verify pairing code and link this device
+      // 1. Call backend to verify pairing code and provision a device identity
       const response = await fetch(`${API_URL}/elder/pair`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, deviceUid: authData.user.id })
+        body: JSON.stringify({ code })
       });
 
       if (!response.ok) {
@@ -39,8 +33,18 @@ export function Pairing() {
         throw new Error(errData.error || 'Failed to pair');
       }
 
-      const { elderId } = await response.json();
+      const { elderId, credentials } = await response.json();
       
+      // 2. Sign in with the securely provisioned device identity
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password
+      });
+
+      if (authError || !authData.user) {
+        throw new Error('Failed to establish secure session.');
+      }
+
       // 3. Update local state
       setRole('ELDER');
       setElderId(elderId);
@@ -48,7 +52,6 @@ export function Pairing() {
       navigate('/elder');
     } catch (err: any) {
       setError(err.message);
-      // Clean up anonymous session if pairing failed
       await supabase.auth.signOut();
     } finally {
       setLoading(false);
