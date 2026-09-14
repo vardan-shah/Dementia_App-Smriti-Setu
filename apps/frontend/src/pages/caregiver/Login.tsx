@@ -43,6 +43,9 @@ export function Login() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-surface p-6">
       <Card className="w-full max-w-md p-8">
+        <div className="flex justify-center mb-6">
+          <img src="/pwa-192x192.png" alt="Smriti Setu Logo" className="w-24 h-24 rounded-2xl shadow-sm" />
+        </div>
         <h1 className="text-2xl font-bold mb-6 text-center">Caregiver Login</h1>
         
         {error && <div className="bg-red-50 text-red-600 p-3 rounded mb-4 text-sm">{error}</div>}
