@@ -6,8 +6,11 @@ import { createRelative } from '../../services/api';
 import { compressImage } from '../../utils/imageUtils';
 import { db } from '../../db';
 
+import { useAuthStore } from '../../store/useAuthStore';
+
 export function CreateRelative() {
-  const { id } = useParams<{ id: string }>();
+  const { currentCaregiverElder } = useAuthStore();
+  const id = currentCaregiverElder?.id;
   const navigate = useNavigate();
   
   const [name, setName] = useState('');

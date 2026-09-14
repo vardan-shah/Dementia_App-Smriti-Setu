@@ -45,7 +45,11 @@ export function CreateElder() {
 
       navigate('/caregiver');
     } catch (err: any) {
-      setError(err.message);
+      if (err.message === 'Failed to fetch' || err.message === 'Load failed') {
+        setError('Network Error: The backend server is unreachable or CORS blocked the request. Please check the backend connection.');
+      } else {
+        setError(err.message || 'An unexpected error occurred while creating the elder profile.');
+      }
     } finally {
       setLoading(false);
     }

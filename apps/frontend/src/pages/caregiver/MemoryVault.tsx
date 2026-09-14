@@ -7,8 +7,11 @@ import { fetchRelatives, fetchStories } from '../../services/api';
 import { db } from '../../db';
 import { useTranslation } from 'react-i18next';
 
+import { useAuthStore } from '../../store/useAuthStore';
+
 export function MemoryVault() {
-  const { id } = useParams<{ id: string }>();
+  const { currentCaregiverElder } = useAuthStore();
+  const id = currentCaregiverElder?.id;
   const navigate = useNavigate();
   const { t } = useTranslation();
 
