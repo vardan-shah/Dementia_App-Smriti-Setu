@@ -20,14 +20,14 @@ export async function buildApp() {
       if (!origin) return cb(null, true);
       
       const isDev = process.env.NODE_ENV !== 'production';
-      if (isDev) return cb(null, true);
+      if (isDev) return cb(null, origin);
 
       const frontendUrls = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(u => u.trim().replace(/\/$/, '')) : [];
       // Always allow the specific vercel app origin as a fallback since it's known
       frontendUrls.push('https://dementia-app-smriti-setu-frontend.vercel.app');
       
       if (frontendUrls.includes(origin)) {
-        return cb(null, true);
+        return cb(null, origin);
       }
       return cb(new Error('Not allowed by CORS'), false);
     },
