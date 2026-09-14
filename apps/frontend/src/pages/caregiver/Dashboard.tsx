@@ -65,7 +65,7 @@ export function Dashboard() {
           <h3 className="text-lg font-bold mb-2">{t('no_elder_selected', 'No Elder Selected')}</h3>
           <p className="mb-4">{t('please_select_elder_sidebar', 'Please select or create an elder profile from the sidebar to manage their content.')}</p>
           <Button onClick={() => navigate('/caregiver/create-elder')} variant="primary">
-            Create Elder Profile
+            {t('create_elder_profile', 'Create Elder Profile')}
           </Button>
         </div>
       ) : (
