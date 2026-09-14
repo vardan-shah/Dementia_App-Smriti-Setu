@@ -14,23 +14,12 @@ export async function buildApp() {
 
   await app.register(helmet);
   await app.register(cors, {
-    origin: (origin, cb) => {
-      // In production, allow if the origin matches FRONTEND_URL (ignoring trailing slashes)
-      // or if it's the exact vercel domain.
-      if (!origin) return cb(null, true);
-      
-      const isDev = process.env.NODE_ENV !== 'production';
-      if (isDev) return cb(null, origin);
-
-      const frontendUrls = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(u => u.trim().replace(/\/$/, '')) : [];
-      // Always allow the specific vercel app origin as a fallback since it's known
-      frontendUrls.push('https://dementia-app-smriti-setu-frontend.vercel.app');
-      
-      if (frontendUrls.includes(origin)) {
-        return cb(null, origin);
-      }
-      return cb(new Error('Not allowed by CORS'), false);
-    },
+    origin: process.env.NODE_ENV === 'production' 
+      ? [
+          'https://dementia-app-smriti-setu-frontend.vercel.app',
+          ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(u => u.trim().replace(/\/$/, '')) : [])
+        ]
+      : true,
     credentials: true
   });
 
