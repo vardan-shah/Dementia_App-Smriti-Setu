@@ -26,22 +26,11 @@ export function CreateElder() {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`${API_URL}/elders`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionData.session.access_token}`
-        },
-        body: JSON.stringify({
-          full_name: fullName,
-          primary_language: language
-        })
+      const { data, error } = await supabase.rpc('create_elder_and_link', {
+        p_full_name: fullName,
+        p_primary_language: language
       });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Failed to create elder');
-      }
+      if (error) throw new Error(error.message);
 
       navigate('/caregiver');
     } catch (err: any) {
