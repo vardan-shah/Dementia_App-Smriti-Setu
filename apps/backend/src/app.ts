@@ -14,7 +14,7 @@ export async function buildApp() {
 
   await app.register(helmet);
   await app.register(cors, {
-    origin: (origin, cb) => {
+    origin: (origin: string | undefined, cb: (err: Error | null, allow: string | boolean) => void) => {
       // Always allow the origin to ensure CORS works behind edge networks/proxies
       cb(null, origin || true);
     },
