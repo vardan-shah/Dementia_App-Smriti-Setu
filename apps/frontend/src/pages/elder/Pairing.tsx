@@ -22,16 +22,12 @@ export function Pairing() {
 
     try {
       // 1. Call backend to verify pairing code and provision a device identity
-      const { data: resData, error: rpcError } = await supabase.rpc('pair_device_with_code', {
-        p_code: code
+      const { data: resData, error: funcError } = await supabase.functions.invoke('pair-device', {
+        body: { code }
       });
-      
-      if (rpcError) {
-        throw new Error(rpcError.message || 'Failed to pair');
-      }
-      
+      if (funcError) throw new Error(funcError.message);
       const { elderId, credentials } = resData;
-      
+
       // 2. Sign in with the securely provisioned device identity
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: credentials.email,
