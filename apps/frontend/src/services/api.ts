@@ -39,11 +39,14 @@ export async function createStory(data: { elderId: string, title: string, descri
 export async function generateAiSummary(payload: { elderId: string, recentActivities: any[], aiEnabled: boolean }) {
   if (!payload.aiEnabled) return { summary: '' };
   const { data: sessionData } = await supabase.auth.getSession();
-  const headers = sessionData.session ? { 'Authorization': `Bearer ${sessionData.session.access_token}` } : {};
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (sessionData.session) {
+    headers['Authorization'] = `Bearer ${sessionData.session.access_token}`;
+  }
   
   const res = await fetch(`${API_URL}/api/ai/summarize`, {
     method: 'POST',
-    headers: { ...headers, 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(payload)
   });
   if (!res.ok) throw new Error('Failed to generate AI summary');
