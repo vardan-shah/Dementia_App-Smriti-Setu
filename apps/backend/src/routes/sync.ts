@@ -40,6 +40,14 @@ const reminderDeletedSchema = z.object({
   elderId: z.string().uuid()
 });
 
+const relativeCreatedSchema = z.object({
+  id: z.string().uuid(),
+  elderId: z.string().uuid(),
+  name: z.string(),
+  relationship: z.string(),
+  photoLocal: z.string().optional()
+});
+
 export async function syncRoutes(app: FastifyInstance) {
   app.post('/sync', async (request, reply) => {
     try {
@@ -77,6 +85,9 @@ export async function syncRoutes(app: FastifyInstance) {
       } else if (event.type === 'REMINDER_DELETED') {
         const payload = reminderDeletedSchema.parse(event.payload);
         elderId = payload.elderId;
+      } else if (event.type === 'RELATIVE_CREATED') {
+        const payload = relativeCreatedSchema.parse(event.payload);
+        elderId = payload.elderId;
       }
 
       if (elderId) {
@@ -111,6 +122,20 @@ export async function syncRoutes(app: FastifyInstance) {
               updated_at: p.updatedAt || new Date().toISOString()
             }, { onConflict: 'elder_id' });
             
+            if (upsertErr) throw upsertErr;
+            domainApplied = true;
+          } else if (event.type === 'RELATIVE_CREATED') {
+            if (isElderSelf) {
+              return reply.status(403).send({ error: 'Elders cannot create relatives' });
+            }
+            const p = event.payload;
+            const { error: upsertErr } = await supabaseService.from('relatives').upsert({
+              id: p.id,
+              elder_id: p.elderId,
+              name: p.name,
+              relationship: p.relationship,
+              photo_url: p.photoLocal
+            });
             if (upsertErr) throw upsertErr;
             domainApplied = true;
           } 
