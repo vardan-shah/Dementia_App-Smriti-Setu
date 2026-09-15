@@ -35,6 +35,8 @@ export function Login() {
     }
 
     if (data.user) {
+      // Self-heal: ensure profile rows exist. Safe, idempotent SECURITY DEFINER RPC.
+      await supabase.rpc('ensure_caregiver_profile', { p_full_name: 'Caregiver' });
       setRole('CAREGIVER');
       navigate('/caregiver');
     }

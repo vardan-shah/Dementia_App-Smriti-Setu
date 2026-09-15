@@ -20,29 +20,29 @@ export function Register() {
     setError('');
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
     });
 
-    if (error) {
-      setError(error.message);
+    if (signUpError) {
+      setError(signUpError.message);
       setLoading(false);
       return;
     }
 
     if (data.user) {
-      // Create caregiver profile
-      await supabase.from('users').upsert({
-        id: data.user.id,
-        email: data.user.email,
-        role: 'CAREGIVER'
+      // Use SECURITY DEFINER RPC to atomically provision public.users + caregiver_profiles.
+      // Idempotent (ON CONFLICT DO NOTHING), runs server-side — not blocked by RLS.
+      const { error: profileError } = await supabase.rpc('ensure_caregiver_profile', {
+        p_full_name: fullName || 'Caregiver',
       });
-      
-      await supabase.from('caregiver_profiles').upsert({
-        id: data.user.id,
-        full_name: fullName
-      });
+
+      if (profileError) {
+        console.error('[Register] Profile provisioning failed:', profileError);
+        // The on_auth_user_created trigger already created public.users.
+        // The profile will be repaired on next login automatically.
+      }
 
       setRole('CAREGIVER');
       navigate('/caregiver');

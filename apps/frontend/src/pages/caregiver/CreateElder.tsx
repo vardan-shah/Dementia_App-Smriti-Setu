@@ -26,18 +26,25 @@ export function CreateElder() {
         throw new Error('Not authenticated');
       }
 
+      // Ensure caregiver profile exists before attempting elder creation.
+      // This is idempotent and guards against missing profiles from broken registrations.
+      await supabase.rpc('ensure_caregiver_profile', { p_full_name: 'Caregiver' });
+
       const { data, error } = await supabase.rpc('create_elder_and_link', {
         p_full_name: fullName,
         p_primary_language: language
       });
-      if (error) throw new Error(error.message);
+      if (error) throw error;
 
       navigate('/caregiver');
     } catch (err: any) {
-      if (err.message === 'Failed to fetch' || err.message === 'Load failed') {
-        setError('Network Error: The backend server is unreachable or CORS blocked the request. Please check the backend connection.');
+      console.error('[CreateElder] Error:', err);
+      if (err.message?.includes('foreign key') || err.message?.includes('violates')) {
+        setError('Unable to create elder profile: your account setup is incomplete. Please sign out and sign back in, then try again.');
+      } else if (err.message === 'Failed to fetch' || err.message === 'Load failed') {
+        setError('Network error: Unable to reach the server. Please check your connection.');
       } else {
-        setError(err.message || 'An unexpected error occurred while creating the elder profile.');
+        setError(err.message || 'Unable to create elder profile. Please try again.');
       }
     } finally {
       setLoading(false);
