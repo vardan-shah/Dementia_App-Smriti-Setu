@@ -276,7 +276,7 @@ export function ElderOverview({ setActiveTab }: { setActiveTab?: (tab: string) =
                     <div className="p-2 bg-indigo-50 text-indigo-600 rounded-md">
                       <Icon className="w-5 h-5" />
                     </div>
-                    <span className="font-semibold text-gray-700">{score.category}</span>
+                    <span className="font-semibold text-gray-700">{t(`category_${score.category.toLowerCase()}`, score.category)}</span>
                   </div>
                   
                   {score.confidence === 'NOT_YET_MEASURED' || score.category === 'Attention' ? (
@@ -301,7 +301,7 @@ export function ElderOverview({ setActiveTab }: { setActiveTab?: (tab: string) =
                           {score.reactionMetrics.differenceMs > 0 ? '+' : ''}{(score.reactionMetrics.differenceMs / 1000).toFixed(2)} s
                         </span>
                       </div>
-                      <div className="text-xs text-gray-400 mt-1">{t('trend', 'Trend')}: {score.reactionMetrics.trend}</div>
+                      <div className="text-xs text-gray-400 mt-1">{t('trend', 'Trend')}: {t(`trend_${score.reactionMetrics.trend.toLowerCase()}`, score.reactionMetrics.trend)}</div>
                     </div>
                   ) : (
                     <div className="flex items-end gap-2 mt-auto">

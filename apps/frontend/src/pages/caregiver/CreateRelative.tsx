@@ -7,11 +7,13 @@ import { compressImage } from '../../utils/imageUtils';
 import { db } from '../../db';
 
 import { useAuthStore } from '../../store/useAuthStore';
+import { useTranslation } from 'react-i18next';
 
 export function CreateRelative() {
   const { currentCaregiverElder } = useAuthStore();
   const id = currentCaregiverElder?.id;
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   const [name, setName] = useState('');
   const [relationship, setRelationship] = useState('son');
@@ -120,7 +122,7 @@ export function CreateRelative() {
               onChange={e => setRelationship(e.target.value)}
             >
               {relationships.map(r => (
-                <option key={r} value={r}>{r}</option>
+                <option key={r} value={r}>{t(r, r)}</option>
               ))}
             </select>
           </div>

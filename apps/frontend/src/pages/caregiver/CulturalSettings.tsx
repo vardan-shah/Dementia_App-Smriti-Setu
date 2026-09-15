@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { db } from '../../db';
+import { supabase } from '../../supabase';
 import type { CulturalProfile } from '../../services/cultural/types';
 import { Button } from '../../components/ui/Button';
 import { Map, Languages, Heart, Save, CheckCircle } from 'lucide-react';
@@ -17,16 +18,19 @@ const LANGUAGES = [
 ];
 
 export function CulturalSettings() {
-  const { currentCaregiverElder } = useAuthStore();
+  const { currentCaregiverElder, setCurrentCaregiverElder } = useAuthStore();
   const elderId = currentCaregiverElder?.id;
   const { t } = useTranslation();
-  
+
   const [profile, setProfile] = useState<Partial<CulturalProfile>>({
     region: 'Assam',
     preferredLanguage: 'en',
     preferredThemes: []
   });
   const [saved, setSaved] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     async function load() {
@@ -39,9 +43,28 @@ export function CulturalSettings() {
     load();
   }, [elderId]);
 
+  const handleDelete = async () => {
+    if (!elderId) return;
+    setIsDeleting(true);
+    setDeleteError('');
+    try {
+      const { error } = await supabase.rpc('delete_elder_profile', { p_elder_id: elderId });
+      if (error) throw error;
+
+      // Clear local state
+      setCurrentCaregiverElder(null);
+      setConfirmDelete(false);
+    } catch (err: any) {
+      console.error('Delete elder error:', err);
+      setDeleteError(err.message || 'Failed to delete elder profile.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!elderId) return;
-    
+
     const updated = {
       ...profile,
       id: profile.id || elderId,
@@ -51,12 +74,12 @@ export function CulturalSettings() {
       preferredThemes: profile.preferredThemes || [],
       updatedAt: new Date().toISOString()
     } as CulturalProfile;
-    
+
     await db.culturalProfiles.put(updated);
-    
+
     // Sync to backend (sync_events table)
     await syncManager.enqueueEvent('CULTURAL_PROFILE_UPDATED', updated, 'culturalProfile');
-    
+
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -148,7 +171,60 @@ export function CulturalSettings() {
             </span>
           )}
         </div>
+
+        <div className="pt-8 mt-8 border-t border-red-100">
+          <h4 className="text-lg font-bold text-red-600 mb-2">{t('danger_zone', 'Danger Zone')}</h4>
+          <p className="text-sm text-gray-500 mb-4">
+            {t('delete_elder_desc', 'Permanently remove this elder profile and all associated data. This action cannot be undone.')}
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => setConfirmDelete(true)}
+            className="border-red-200 text-red-600 hover:bg-red-50"
+          >
+            {t('delete_elder', 'Delete Elder Profile')}
+          </Button>
+        </div>
       </div>
+
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              {t('delete_elder_confirm_title', 'Delete {{name}}?', { name: currentCaregiverElder?.full_name })}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {t('delete_elder_confirm_desc', 'This permanently removes this elder profile and associated data. This action cannot be undone.')}
+            </p>
+            {deleteError && (
+              <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg">
+                {deleteError}
+              </div>
+            )}
+            <div className="flex gap-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setConfirmDelete(false);
+                  setDeleteError('');
+                }}
+                disabled={isDeleting}
+              >
+                {t('cancel', 'Cancel')}
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? t('deleting', 'Deleting...') : t('confirm_delete', 'Yes, Delete')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
