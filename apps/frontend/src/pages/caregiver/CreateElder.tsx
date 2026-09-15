@@ -36,7 +36,7 @@ export function CreateElder() {
       });
       if (error) throw error;
 
-      navigate('/caregiver');
+      window.location.href = '/caregiver';
     } catch (err: any) {
       console.error('[CreateElder] Error:', err);
       if (err.message?.includes('foreign key') || err.message?.includes('violates')) {
