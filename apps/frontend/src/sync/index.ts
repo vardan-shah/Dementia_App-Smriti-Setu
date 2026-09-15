@@ -1,9 +1,9 @@
-import { API_URL } from "../config/env";
+import { API_URL, SUPABASE_URL } from "../config/env";
 import { db } from '../db';
 import { supabase } from '../supabase';
 
 export class SyncManager {
-  private syncUrl = `${API_URL}/sync`;
+  private syncUrl = `${SUPABASE_URL}/functions/v1/sync-handler`;
   private isSyncing = false;
 
   async enqueueEvent(type: string, payload: any, entity?: string) {

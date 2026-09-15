@@ -19,18 +19,17 @@ export async function createRelative(data: { elderId: string, name: string, rela
 }
 
 export async function fetchStories(elderId: string) {
-  const { data, error } = await supabase.from('stories').select('*').eq('elder_id', elderId);
+  const { data, error } = await supabase.from('memories').select('*').eq('elder_id', elderId);
   if (error) throw new Error('Failed to fetch stories');
   return data;
 }
 
 export async function createStory(data: { elderId: string, title: string, description?: string, relativeId?: string, photoUrl?: string }) {
-  const { data: newStory, error } = await supabase.from('stories').insert({
+  const { data: newStory, error } = await supabase.from('memories').insert({
     elder_id: data.elderId,
     title: data.title,
-    description: data.description,
-    relative_id: data.relativeId,
-    photo_url: data.photoUrl
+    description: data.description
+    // TODO: support photo_url and relative tags in memories table properly
   }).select().single();
   if (error) throw new Error('Failed to create story');
   return newStory;
